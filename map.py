@@ -31,20 +31,20 @@ This seed will be taken to create the map, however, upon running the program,
 default map (generated) will be used.
 Map has a 2D array (tiles) which corresponds to the hexes.
 
-Noise is drawn, by seeing, if the value exceeds a certain threshold.
+Noise is drawn, by checking if the value exceeds a certain threshold.
 
 Hexes are generated from what values dominate in the hex area
 '''
 
 class Map:
 
-    MAP_WIDTH = 500
-    MAP_HEIGHT = 500
+    MAP_WIDTH = 350
+    MAP_HEIGHT = 350
 
-    T_MOUNTAIN_THRESH = 0.4
-    T_FOREST_THRESH = 0.09
-    T_FIELD_THRESH = 0.02
-    T_RIVER_THRESH = -0.1
+    T_MOUNTAIN_THRESH = 0.31
+    T_FOREST_THRESH = 0.13
+    T_FIELD_THRESH = 0.04
+    T_RIVER_THRESH = -0.03
 
     def __init__(self, start_octaves, screen_width, screen_height) -> None:
         self.pnoise = PerlinNoise(octaves=start_octaves)
