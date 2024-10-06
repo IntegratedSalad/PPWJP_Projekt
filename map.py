@@ -1,4 +1,3 @@
-import pygame
 from perlin_noise import PerlinNoise
 from enum import Enum
 
@@ -30,9 +29,7 @@ The user can generate a Map before starting simulation by providing a seed.
 This seed will be taken to create the map, however, upon running the program,
 default map (generated) will be used.
 Map has a 2D array (tiles) which corresponds to the hexes.
-
 Noise is drawn, by checking if the value exceeds a certain threshold.
-
 Hexes are generated from what values dominate in the hex area
 '''
 
@@ -46,7 +43,9 @@ class Map:
     T_FIELD_THRESH = 0.04
     T_RIVER_THRESH = -0.03
 
-    def __init__(self, start_octaves, screen_width, screen_height) -> None:
+    # TODO: set custom map width
+    # they range from 350 to 800
+    def __init__(self, start_octaves, map_width, map_height) -> None:
         self.pnoise = PerlinNoise(octaves=start_octaves)
         self.noise_map = self.get_noise_map(Map.MAP_WIDTH, Map.MAP_HEIGHT)
         self.tiles = None

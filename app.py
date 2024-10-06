@@ -2,29 +2,23 @@ import pygame
 from pathlib import Path
 from map import Map
 
-'''
-Pygame basics:
-Surface is an image (space) and we can draw shapes onto that space.
-Then, we can blit (copy) everything what we've composed
-onto screen surface (main canvas) that gets drawn
-
-'''
-
-'''
-App sets everything up:
-Surface to blit everything (screen)
-Every instance that needs to be in memory for the whole time
-Maybe App draws everything? At least for now.
-'''
-
 COLOR_MOUNTAIN = (117, 99, 73)
 COLOR_FOREST = (27, 117, 35)
 COLOR_FIELD = (77, 212, 47)
 COLOR_RIVER = (0, 90, 224)
 
 '''
-Maybe inherit from Rect...
-It composes of three rects:
+Pygame basics:
+Surface is space onto which we can draw shapes; for example by calling
+pygame.draw.rect when we have rect or multiple rects.
+It can set color and copy these pixels onto passed surface.
+Then, we can blit (copy) everything what we've composed
+onto screen surface (main canvas) that gets drawn.
+'''
+
+'''
+Class Slider
+Composes of three rects:
 on_rect = from 0 to button rect
 off_rect = from button rect to self width
 button_rect = separates on and off sides
@@ -61,7 +55,11 @@ class Slider:
         self.percent_on = percent_on
         self.on_rect = pygame.Rect(0, 0, (self.percent_on / 100) * self.width, self.height)
         self.off_rect = pygame.Rect(self.on_rect.width, 0, self.width, self.height)
-        self.button_rect = pygame.Rect(self.on_rect.width, 0, 0.1*self.width, self.height)
+        self.button_rect = pygame.Rect(self.on_rect.width, 0, 0.16*self.width, self.height)
+    
+    def get_value(self):
+        # Calculate value based on percent on
+        pass
     
     '''
     mouse_x, mouse_y at the moment of click
@@ -70,8 +68,16 @@ class Slider:
         rel_x = abs(self.x - mouse_x)
         rel_y = abs(self.y - mouse_y)
 
-        # self.percent_on = 
+        # new_percent_on =
+        # self.update(new_percent_on)
 
+'''
+Class App
+App sets everything up:
+Surface to blit everything (screen)
+Every instance that needs to be in memory for the whole time
+Maybe App draws everything? At least for now.
+'''
 class App:
     WIDTH = 1024
     HEIGHT = 720
@@ -98,36 +104,58 @@ class App:
         # pygame.display.update()
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
-        self.draw_starting_screen()
+        mw, mh = self.draw_starting_screen()
+        self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh)
+        self.draw_map_gen_screen()
 
-    def draw_starting_screen(self) -> None:
+    def draw_starting_screen(self) -> tuple[int, int]:
         
         # choose map dimensions, number of starting bears etc.
         slider1 = Slider(self.main_font, 0, 0, 50, 20, 0, 10)
-        slider1.update(40)
+        slider1.update(28)
+        
+        map_width = Map.MAP_WIDTH
+        map_height = Map.MAP_HEIGHT
+
+        rect_visualisation = pygame.Rect(0, 0, map_width, map_height)
+        visualisation_surface = pygame.Surface((map_width, map_height))
 
         t_pressg = self.main_font.render("Press g to generate perlin noise...", False, (255, 255, 255))
+        t_generating_noise = self.main_font.render("Generating noise...", False, (255, 255, 255))
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_g:
+                        self.screen.fill((0, 0, 0))
+                        self.screen.blit(t_generating_noise, (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2))
+                        pygame.display.update()
+                        return (350, 350)
 
             self.screen.blit(slider1.get_composition(), (80, 80))
-            self.screen.blit(self.t_misioland, (App.WIDTH / 2 - len("misioland") - 20, 60))
-            self.screen.blit(t_pressg, (App.WIDTH / 2 - len("Press g to generate perlin noise...") - 60, App.HEIGHT / 2))
+            self.screen.blit(self.t_misioland, (App.WIDTH / 2 - len("misioland") - 60, 60))
+            self.screen.blit(t_pressg, (App.WIDTH / 2 - len("Press g to generate perlin noise...") - 100, App.HEIGHT / 2 + 200))
+
+            pygame.draw.rect(visualisation_surface, (171, 223, 255), rect_visualisation, 0, 5, 5, 5, 5, 5)
+            self.screen.blit(visualisation_surface, (App.WIDTH / 2 - rect_visualisation.width/2, 100))
 
             pygame.display.update()
     
     def draw_map_gen_screen(self) -> None:
         # define clock
         # show generation of map 
+
+        self.screen.fill((0, 0, 0))
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
 
             # Maybe put noise map onto different surface?
-            # Yes, and then - scale that surface
+            # Yes, and then - scale that surface.
             for i, x in enumerate(self.map.noise_map):
                 for j, nval in enumerate(x):
                     
