@@ -49,13 +49,16 @@ class Slider:
         pygame.draw.rect(slider_surface, self.color_left, self.on_rect)
         pygame.draw.rect(slider_surface, self.color_right, self.off_rect)
         pygame.draw.rect(slider_surface, self.color_button, self.button_rect)
+
         return slider_surface
     
     def update(self, percent_on):
         self.percent_on = percent_on
         self.on_rect = pygame.Rect(0, 0, (self.percent_on / 100) * self.width, self.height)
         self.off_rect = pygame.Rect(self.on_rect.width, 0, self.width, self.height)
-        self.button_rect = pygame.Rect(self.on_rect.width, 0, 0.16*self.width, self.height)
+        button_width = 0.25 * self.width
+        self.button_rect = pygame.Rect(self.on_rect.width, 0, button_width - button_width/2, self.height)
+        # I think that button_rect has to be drawn separately
     
     def get_value(self):
         # Calculate value based on percent on
@@ -67,6 +70,15 @@ class Slider:
     def slide(self, mouse_x, mouse_y) -> None:
         rel_x = abs(self.x - mouse_x)
         rel_y = abs(self.y - mouse_y)
+
+        print(self.button_rect.x)
+        print(rel_x, rel_y)
+
+        # TODO: calculate new percent on...
+
+        # if not self.button_rect.collidepoint(rel_x, rel_y):
+            # self.button_rect.x = rel_x
+            # self.button_rect.y = rel_y
 
         # new_percent_on =
         # self.update(new_percent_on)
@@ -112,7 +124,7 @@ class App:
         
         # choose map dimensions, number of starting bears etc.
         slider1 = Slider(self.main_font, 0, 0, 50, 20, 0, 10)
-        slider1.update(28)
+        slider1.update(50)
         
         map_width = Map.MAP_WIDTH
         map_height = Map.MAP_HEIGHT
@@ -122,11 +134,17 @@ class App:
 
         t_pressg = self.main_font.render("Press g to generate perlin noise...", False, (255, 255, 255))
         t_generating_noise = self.main_font.render("Generating noise...", False, (255, 255, 255))
+        slider_rect = None # this is a slider rect that gets created after blitting
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    print("gnuj")
+                    mousepos = pygame.mouse.get_pos()
+                    if slider_rect.collidepoint(mousepos):
+                        slider1.slide(abs(mousepos[0]), mousepos[1])
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_g:
@@ -135,7 +153,8 @@ class App:
                         pygame.display.update()
                         return (350, 350)
 
-            self.screen.blit(slider1.get_composition(), (80, 80))
+            slider_rect = self.screen.blit(slider1.get_composition(), (App.WIDTH /2 - slider1.width / 2, App.HEIGHT/2 + 150))
+            slider1.x, slider1.y = slider_rect.x, slider_rect.y
             self.screen.blit(self.t_misioland, (App.WIDTH / 2 - len("misioland") - 60, 60))
             self.screen.blit(t_pressg, (App.WIDTH / 2 - len("Press g to generate perlin noise...") - 100, App.HEIGHT / 2 + 200))
 
