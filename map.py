@@ -1,7 +1,15 @@
 from perlin_noise import PerlinNoise
 from enum import Enum
+from math import sqrt, sin, cos
 
 MAX_FOOD = 50
+
+CLOCK_DIR_12 = 2
+CLOCK_DIR_1 = 1
+CLOCK_DIR_4 = 0
+CLOCK_DIR_6 = 5
+CLOCK_DIR_7 = 4
+CLOCK_DIR_10 = 3
 
 class TileType(Enum):
     T_MOUNTAINS = 1
@@ -16,12 +24,84 @@ Tile class
 '''
 
 class Tile:
-    def __init__(self, ttype) -> None:
+    def __init__(self, hex, ttype) -> None:
+        self.hex = hex # does Tile needs hex?
         self.ttype = ttype
         self.fmeat_quantity = 0
         self.fapple_quantity = 0
         self.water_quantity = 0
+        self.pos_in_list = 0
         self.bears = []
+
+'''
+Hex class
+
+Class represents axial coordinates of one hexagonal polygon
+This class is independent of the actual graphical representation
+'''
+
+class Hex:
+    def __init__(self, q, r) -> None:
+        self.q = q
+        self.r = r
+
+'''
+HexGrid class
+
+Starts with Hex at 0,0 which is the center of the grid.
+Grid operates on axial coordinates.
+Taken from https://www.redblobgames.com/grids/hexagons/
+
+Hexagonal grid starts with leftmost hex with q=0, r=0
+'''
+
+class HexGrid:
+    def __init__(self, size) -> None:
+        self.size = size # no of rings
+        self.grid = None
+        self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
+        # self.generate_grid()
+
+    def axial_direction(self, dir):
+        return self.directions[dir]
+
+    def axial_add(self, hex: Hex, vec: Hex):
+        '''
+        Return a Hex, by providing an offset vector from it.
+        When searching for a hex, use this object returned here
+        as a struct for storing q and r params in a grid,
+        with indices q,r.
+        '''
+        return Hex(hex.q + vec.q, hex.r + vec.r)
+
+    def axial_neighbor(self, hex: Hex, dir):
+        return self.axial_add(hex, self.axial_direction(dir))
+    
+    def axial_scale(self, hex: Hex, factor):
+        return Hex(hex.q * factor, hex.r * factor)
+    
+    def get_axial_ring(self, center_hex: Hex, radius):
+        results = []
+        next_hex = self.axial_add(center_hex, self.axial_scale(self.axial_direction(4), radius))
+        for i in range(0, 6):
+            for _ in range(0, radius):
+                results.append(next_hex)
+                next_hex = self.axial_neighbor(next_hex, i)
+        return results
+    
+    def get_spiral_axial_ring(self, center: Hex, radius):
+        results = [center]
+        for i in range(1, radius):
+            results.extend(self.get_axial_ring(center, i))
+        return results
+    
+    def generate_grid(self):
+        # q - columns
+        # r - rows
+        self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for q in range(0, self.size)] for r in range(0, self.size)]
+
+    # def generate_grid(self):
+        # self.grid.extend(self.get_spiral_axial_ring(self.grid[0], self.size))
 
 '''
 Map class
@@ -45,15 +125,12 @@ class Map:
     T_FIELD_THRESH = 0.04
     T_RIVER_THRESH = -0.03
 
-    # TODO: set custom map width
-    # they range from 350 to 800
     def __init__(self, start_octaves, map_width, map_height) -> None:
         self.pnoise = PerlinNoise(octaves=start_octaves)
-        #self.noise_map = self.get_noise_map(Map.MAP_WIDTH, Map.MAP_HEIGHT)
         self.noise_map = self.get_noise_map(map_width, map_height)
-        self.tiles = None
+        self.grid = None
 
-    def generate_tiles(self) -> None:
+    def generate_grid(self) -> None:
         if self.noise is None:
             return
 

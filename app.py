@@ -6,7 +6,7 @@ from map import Map
 COLOR_MOUNTAIN = (117, 99, 73)
 COLOR_FOREST = (27, 117, 35)
 COLOR_FIELD = (77, 212, 47)
-COLOR_RIVER = (0, 90, 224)
+COLOR_RIVER = (21, 67, 232)
 
 '''
 Pygame basics:
@@ -129,7 +129,7 @@ class App:
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
         mw, mh = self.draw_starting_screen()
-        print(f"Using: {mw, mh}")
+        if mw is None or mh is None: return
         self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh)
         self.draw_map_gen_screen()
 
@@ -152,11 +152,12 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
+                    return (None, None)
+                
                 if pygame.mouse.get_pressed()[0]:
                     mousepos = pygame.mouse.get_pos()
                     if slider_rect.collidepoint(mousepos):
                         slider1.slide(abs(mousepos[0]), mousepos[1])
-                        print(slider1.value)
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_g:
@@ -191,6 +192,7 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
+                    return
 
             # Maybe put noise map onto different surface?
             # Yes, and then - scale that surface if needed
