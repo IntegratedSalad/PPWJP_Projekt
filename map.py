@@ -21,13 +21,12 @@ class Tile:
         self.fmeat_quantity = 0
         self.fapple_quantity = 0
         self.water_quantity = 0
+        self.bears = []
 
 '''
 Map class
 Default noise will be set at the time of creation of the Map.
-The user can generate a Map before starting simulation by providing a seed.
-This seed will be taken to create the map, however, upon running the program,
-default map (generated) will be used.
+The user can generate a Map before starting simulation by providing a seed and size.
 Map has a 2D array (tiles) which corresponds to the hexes.
 Noise is drawn, by checking if the value exceeds a certain threshold.
 Hexes are generated from what values dominate in the hex area
@@ -38,6 +37,9 @@ class Map:
     MAP_WIDTH = 350
     MAP_HEIGHT = 350
 
+    MAX_WIDTH = 500
+    MAX_HEIGHT = 500
+
     T_MOUNTAIN_THRESH = 0.31
     T_FOREST_THRESH = 0.13
     T_FIELD_THRESH = 0.04
@@ -47,7 +49,8 @@ class Map:
     # they range from 350 to 800
     def __init__(self, start_octaves, map_width, map_height) -> None:
         self.pnoise = PerlinNoise(octaves=start_octaves)
-        self.noise_map = self.get_noise_map(Map.MAP_WIDTH, Map.MAP_HEIGHT)
+        #self.noise_map = self.get_noise_map(Map.MAP_WIDTH, Map.MAP_HEIGHT)
+        self.noise_map = self.get_noise_map(map_width, map_height)
         self.tiles = None
 
     def generate_tiles(self) -> None:

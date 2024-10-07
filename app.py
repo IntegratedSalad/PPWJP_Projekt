@@ -1,4 +1,5 @@
 import pygame
+from math import ceil, floor
 from pathlib import Path
 from map import Map
 
@@ -37,9 +38,15 @@ class Slider:
         self.color_button = color_button
         self.percent_on = 0
         self.current_value = 0
+        self.surface = None
+        self.rect = None
 
         self.update(self.percent_on)
+        button_width = 0.25 * self.width
+        self.button_rect = pygame.Rect(self.on_rect.width, 0, button_width - button_width/2, self.height)
         self.surface = self.get_composition()
+
+        self.value = self.min_val
 
     def get_composition(self) -> pygame.Surface:
         '''
@@ -49,21 +56,25 @@ class Slider:
         pygame.draw.rect(slider_surface, self.color_left, self.on_rect)
         pygame.draw.rect(slider_surface, self.color_right, self.off_rect)
         pygame.draw.rect(slider_surface, self.color_button, self.button_rect)
+        self.rect = slider_surface.get_rect()
 
         return slider_surface
     
     def update(self, percent_on):
         self.percent_on = percent_on
-        self.on_rect = pygame.Rect(0, 0, (self.percent_on / 100) * self.width, self.height)
+        self.on_rect = pygame.Rect(0, 0, self.percent_on * self.width, self.height)
         self.off_rect = pygame.Rect(self.on_rect.width, 0, self.width, self.height)
-        button_width = 0.25 * self.width
-        self.button_rect = pygame.Rect(self.on_rect.width, 0, button_width - button_width/2, self.height)
-        # I think that button_rect has to be drawn separately
-    
-    def get_value(self):
+
+    def set_value(self):
         # Calculate value based on percent on
-        pass
-    
+
+        if self.percent_on <= 0:
+            self.value = self.min_val
+        elif self.percent_on >= 1:
+            self.value = self.max_val
+        else:
+            self.value = round(self.min_val + ((self.max_val - self.min_val) * self.percent_on))
+
     '''
     mouse_x, mouse_y at the moment of click
     '''
@@ -71,17 +82,18 @@ class Slider:
         rel_x = abs(self.x - mouse_x)
         rel_y = abs(self.y - mouse_y)
 
-        print(self.button_rect.x)
-        print(rel_x, rel_y)
+        if rel_x < self.width - self.button_rect.width:
+            self.button_rect.x = rel_x
 
-        # TODO: calculate new percent on...
-
-        # if not self.button_rect.collidepoint(rel_x, rel_y):
-            # self.button_rect.x = rel_x
-            # self.button_rect.y = rel_y
-
-        # new_percent_on =
-        # self.update(new_percent_on)
+        new_percent_on = (self.button_rect.x + self.button_rect.width / 2) / (self.width)
+        new_percent_on = round(new_percent_on, 3)
+        if (new_percent_on > 0.9):
+            new_percent_on = 1
+        if (new_percent_on < 0.1):
+            new_percent_on = 0
+        
+        self.update(new_percent_on)
+        self.set_value()
 
 '''
 Class App
@@ -117,20 +129,20 @@ class App:
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
         mw, mh = self.draw_starting_screen()
+        print(f"Using: {mw, mh}")
         self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh)
         self.draw_map_gen_screen()
 
     def draw_starting_screen(self) -> tuple[int, int]:
         
         # choose map dimensions, number of starting bears etc.
-        slider1 = Slider(self.main_font, 0, 0, 50, 20, 0, 10)
-        slider1.update(50)
+        slider1 = Slider(self.main_font, 0, 0, 80, 20, 350, 500)
         
         map_width = Map.MAP_WIDTH
         map_height = Map.MAP_HEIGHT
 
         rect_visualisation = pygame.Rect(0, 0, map_width, map_height)
-        visualisation_surface = pygame.Surface((map_width, map_height))
+        visualisation_surface = pygame.Surface((Map.MAX_WIDTH, Map.MAX_HEIGHT))
 
         t_pressg = self.main_font.render("Press g to generate perlin noise...", False, (255, 255, 255))
         t_generating_noise = self.main_font.render("Generating noise...", False, (255, 255, 255))
@@ -140,26 +152,33 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    print("gnuj")
+                if pygame.mouse.get_pressed()[0]:
                     mousepos = pygame.mouse.get_pos()
                     if slider_rect.collidepoint(mousepos):
                         slider1.slide(abs(mousepos[0]), mousepos[1])
+                        print(slider1.value)
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_g:
                         self.screen.fill((0, 0, 0))
                         self.screen.blit(t_generating_noise, (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2))
                         pygame.display.update()
-                        return (350, 350)
+                        return (slider1.value, slider1.value)
 
-            slider_rect = self.screen.blit(slider1.get_composition(), (App.WIDTH /2 - slider1.width / 2, App.HEIGHT/2 + 150))
+            self.screen.fill((0,0,0))
+            visualisation_surface.fill((0,0,0))
+            slider_rect = self.screen.blit(slider1.get_composition(), (App.WIDTH /2 - slider1.width / 2, App.HEIGHT/2 + 250))
             slider1.x, slider1.y = slider_rect.x, slider_rect.y
-            self.screen.blit(self.t_misioland, (App.WIDTH / 2 - len("misioland") - 60, 60))
-            self.screen.blit(t_pressg, (App.WIDTH / 2 - len("Press g to generate perlin noise...") - 100, App.HEIGHT / 2 + 200))
+            slider1.rect.x, slider1.y = slider_rect.x, slider_rect.y
+            self.screen.blit(self.t_misioland, (App.WIDTH / 2 - len("misioland") - 60, 30))
+            self.screen.blit(t_pressg, (App.WIDTH / 2 - len("Press g to generate perlin noise...") - 100, App.HEIGHT / 2 + 300))
 
+            rect_visualisation.width = slider1.value
+            rect_visualisation.height = slider1.value
+            t_map_size = self.main_font.render(f"Map size: {slider1.value}px", False, (255, 255, 255))
+            self.screen.blit(t_map_size, (App.WIDTH / 2 - (len("Map size: px") + 3) - 50, App.HEIGHT / 2 + 220))
             pygame.draw.rect(visualisation_surface, (171, 223, 255), rect_visualisation, 0, 5, 5, 5, 5, 5)
-            self.screen.blit(visualisation_surface, (App.WIDTH / 2 - rect_visualisation.width/2, 100))
+            self.screen.blit(visualisation_surface, (App.WIDTH / 2 - rect_visualisation.width/2, 70))
 
             pygame.display.update()
     
@@ -174,7 +193,7 @@ class App:
                     self.quit()
 
             # Maybe put noise map onto different surface?
-            # Yes, and then - scale that surface.
+            # Yes, and then - scale that surface if needed
             for i, x in enumerate(self.map.noise_map):
                 for j, nval in enumerate(x):
                     
