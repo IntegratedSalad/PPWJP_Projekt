@@ -60,7 +60,7 @@ class HexGrid:
         self.size = size # no of rings
         self.grid = None
         self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
-        # self.generate_grid()
+        self.generate_grid()
 
     def axial_direction(self, dir):
         return self.directions[dir]
@@ -100,9 +100,6 @@ class HexGrid:
         # r - rows
         self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for q in range(0, self.size)] for r in range(0, self.size)]
 
-    # def generate_grid(self):
-        # self.grid.extend(self.get_spiral_axial_ring(self.grid[0], self.size))
-
 '''
 Map class
 Default noise will be set at the time of creation of the Map.
@@ -126,8 +123,10 @@ class Map:
     T_RIVER_THRESH = -0.03
 
     def __init__(self, start_octaves, map_width, map_height) -> None:
+        self.map_width = map_width
+        self.map_height = map_height
         self.pnoise = PerlinNoise(octaves=start_octaves)
-        self.noise_map = self.get_noise_map(map_width, map_height)
+        self.noise_map = self.get_noise_map(self.map_width, self.map_height)
         self.grid = None
 
     def generate_grid(self) -> None:

@@ -1,5 +1,5 @@
 import pygame
-from math import ceil, floor
+from math import ceil, floor, cos, pi, sin
 from pathlib import Path
 from map import Map
 
@@ -148,6 +148,8 @@ class App:
         t_generating_noise = self.main_font.render("Generating noise...", False, (255, 255, 255))
         slider_rect = None # this is a slider rect that gets created after blitting
 
+        hex_surf = pygame.Surface((100, 100))
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -181,11 +183,17 @@ class App:
             pygame.draw.rect(visualisation_surface, (171, 223, 255), rect_visualisation, 0, 5, 5, 5, 5, 5)
             self.screen.blit(visualisation_surface, (App.WIDTH / 2 - rect_visualisation.width/2, 70))
 
+            self.draw_polygon_on_surface(hex_surf, 20, (255, 255, 255), 6)
+            self.screen.blit(hex_surf, (50, 50))
+
             pygame.display.update()
     
     def draw_map_gen_screen(self) -> None:
         # define clock
         # show generation of map 
+
+        map_surf = pygame.Surface(self.map.map_width, self.map.map_height)
+        map_surf.fill((0, 0, 0))
 
         self.screen.fill((0, 0, 0))
         while True:
@@ -216,3 +224,7 @@ class App:
     def quit(self) -> None:
         pygame.font.quit()
         pygame.quit()
+
+    def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
+        n, r = vertex_count, radius
+        pygame.draw.polygon(surface, color, [(surface.get_width()/2 + r * cos(2 * pi * i / n), surface.get_height()/2 + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
