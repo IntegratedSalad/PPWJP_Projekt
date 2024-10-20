@@ -44,6 +44,9 @@ class Point:
         self.x = x
         self.y = y
 
+    def __str__(self):
+        return f"X: {self.x} Y:{self.y}"
+
 '''
 Cube class
 '''
@@ -66,6 +69,9 @@ class Hex:
         self.q = q
         self.r = r
 
+    def __str__(self):
+        return f"Q:{self.q} R: {self.r}"
+
 '''
 HexGrid class
 
@@ -74,10 +80,11 @@ Grid operates on axial coordinates.
 Taken from https://www.redblobgames.com/grids/hexagons/
 
 Hexagonal grid starts with leftmost hex with q=0, r=0
+Hexagonal grid is composed of flat-top oriented hexagons.
 '''
 
 class HexGrid:
-    def __init__(self, size) -> None:
+    def __init__(self, size=None) -> None:
         self.size = size # no of rings
         self.grid = None
         self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
@@ -122,31 +129,32 @@ class HexGrid:
         self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for q in range(0, self.size)] for r in range(0, self.size)]
 
     @staticmethod
-    def calculate_size_needed(width, height, hex_radius):
+    def calculate_grid_size_needed(width, height, hex_radius):
         '''
         Calculate N, where 2D array of hexes is NxN, needed
         to represent a hexagonal map from the generated perlin noise map.
+
         '''
-        pass
+        return (width//hex_radius*2, height//hex_radius*2)
 
     @staticmethod
-    def cube_to_axial(cube: Cube):
+    def cube_to_axial(cube: Cube) -> Hex:
         q = cube.q
         r = cube.r
         return Hex(q, r)
     
     @staticmethod
-    def axial_to_cube(hex: Hex):
+    def axial_to_cube(hex: Hex) -> Cube:
         q = hex.q
         r = hex.r
         s = -q-r
         return Cube(q, r, s)
 
     @staticmethod
-    def flat_hex_to_pixel(radius, hex: Hex):
+    def flat_hex_to_pixel(radius, hex: Hex) -> Point:
         x = radius * ((3.0/2)   * hex.q)
-        y = radius * (sqrt(3)/2 * hex.q + sqrt(3) * hex.r)
-        return (x, y)
+        y = radius * ((sqrt(3)/2) * hex.q + sqrt(3.0) * hex.r)
+        return Point(x, y)
     
     @staticmethod
     def pixel_to_flat_hex(point: Point, radius) -> int:
@@ -198,12 +206,14 @@ class Map:
     T_FIELD_THRESH = 0.04
     T_RIVER_THRESH = -0.03
 
-    def __init__(self, start_octaves, map_width, map_height) -> None:
+    def __init__(self, start_octaves, map_width, map_height, hex_radius) -> None:
         self.map_width = map_width
         self.map_height = map_height
+        self.hex_radius = hex_radius
         self.pnoise = PerlinNoise(octaves=start_octaves)
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
-        self.hex_grid = HexGrid()
+        # assuming width and height are the same
+        self.hex_grid = HexGrid(HexGrid.calculate_grid_size_needed(self.map_width, self.map_height, self.hex_radius)[0])
 
     def draw(self, screen) -> None:
         pass

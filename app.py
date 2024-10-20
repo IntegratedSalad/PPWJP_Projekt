@@ -128,9 +128,10 @@ class App:
         # pygame.display.update()
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
+        default_hex_radius = 10
         mw, mh = self.draw_starting_screen()
         if mw is None or mh is None: return
-        self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh)
+        self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh, hex_radius=default_hex_radius)
         self.draw_map_gen_screen()
 
     def draw_starting_screen(self) -> tuple[int, int]:
@@ -200,8 +201,10 @@ class App:
         map_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         map_surf.fill((0, 0, 0))
 
-        hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
+        hex_grid_surf = pygame.Surface((800, 800))
         hex_grid_surf.fill((0, 0, 0))
+
+        # Slider do zmieniania hex_radius
 
         while True:
             for event in pygame.event.get():
@@ -232,24 +235,31 @@ class App:
             # Blit hexes
 
             map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
-            self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
+            # self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
+            self.draw_hex_map(hex_grid_surf, 10)
+            self.screen.blit(hex_grid_surf, (50,50))
             pygame.display.update()
-    
-    def quit(self) -> None:
-        pygame.font.quit()
-        pygame.quit()
 
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
         pygame.draw.polygon(surface, color, [(surface.get_width()/2 + r * cos(2 * pi * i / n), surface.get_height()/2 + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
 
-    def draw_polygon_at_x_y(self, x, y, radius, color, vertex_count, width=1):
-        hex_surf = pygame.Surface()
+    def draw_polygon_at_x_y(self, surface: pygame.Surface, x, y, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
-        pygame.draw.polygon(hex_surf, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
+        pygame.draw.polygon(surface, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
 
-    def draw_hex_map(self, surface: pygame.Surface, radius):
+    # def draw_hex_at_center_x_y(self, surface: pygame.Surface, x, y, radius, color, width=1):
+    #     pass
 
-        
+    def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
+        n = self.map.hex_grid.size
+        for r in range(0, n):
+            for q in range(0, n):
+                hex = self.map.hex_grid.grid[q][r].hex
+                point = HexGrid.flat_hex_to_pixel(radius, hex)
+                x, y = point.x, point.y
+                self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
 
-        pass
+    def quit(self) -> None:
+        pygame.font.quit()
+        pygame.quit()
