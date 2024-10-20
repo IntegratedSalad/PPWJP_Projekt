@@ -1,7 +1,7 @@
 import pygame
-from math import ceil, floor, cos, pi, sin
+from math import cos, pi, sin
 from pathlib import Path
-from map import Map
+from map import Map, HexGrid
 
 COLOR_MOUNTAIN = (117, 99, 73)
 COLOR_FOREST = (27, 117, 35)
@@ -136,7 +136,9 @@ class App:
     def draw_starting_screen(self) -> tuple[int, int]:
         
         # choose map dimensions, number of starting bears etc.
-        slider1 = Slider(self.main_font, 0, 0, 80, 20, 350, 500)
+        slider1 = Slider(self.main_font, 0, 0, 80, 20, 300, 450)
+        # bear_slider = Slider
+        # evolution_rate_slider = Slider
         
         map_width = Map.MAP_WIDTH
         map_height = Map.MAP_HEIGHT
@@ -190,35 +192,47 @@ class App:
     
     def draw_map_gen_screen(self) -> None:
         # define clock
-        # show generation of map 
+        # show generation of map
 
-        map_surf = pygame.Surface(self.map.map_width, self.map.map_height)
+        # Mapa z szesciokatami takze musi byc na osobnym surface!!!
+        self.screen.fill((0, 0, 0))
+
+        map_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         map_surf.fill((0, 0, 0))
 
-        self.screen.fill((0, 0, 0))
+        hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
+        hex_grid_surf.fill((0, 0, 0))
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
                     return
 
+            map_surf.fill((0,0,0))
             # Maybe put noise map onto different surface?
             # Yes, and then - scale that surface if needed
+            # Do we need to set_at continuously?
             for i, x in enumerate(self.map.noise_map):
                 for j, nval in enumerate(x):
                     
                     if nval >= Map.T_MOUNTAIN_THRESH:
-                        self.screen.set_at((j, i), COLOR_MOUNTAIN)
+                        map_surf.set_at((j, i), COLOR_MOUNTAIN)
                     
                     elif nval >= Map.T_FOREST_THRESH:
-                        self.screen.set_at((j, i), COLOR_FOREST)
+                        map_surf.set_at((j, i), COLOR_FOREST)
 
                     elif nval >= Map.T_FIELD_THRESH:
-                        self.screen.set_at((j, i), COLOR_FIELD)
+                        map_surf.set_at((j, i), COLOR_FIELD)
                     
                     else:
-                        self.screen.set_at((j, i), COLOR_RIVER)
+                        map_surf.set_at((j, i), COLOR_RIVER)
             
+            # Blit map [V]
+            # Blit hexes
+
+            map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
+            self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
             pygame.display.update()
     
     def quit(self) -> None:
@@ -228,3 +242,14 @@ class App:
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
         pygame.draw.polygon(surface, color, [(surface.get_width()/2 + r * cos(2 * pi * i / n), surface.get_height()/2 + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
+
+    def draw_polygon_at_x_y(self, x, y, radius, color, vertex_count, width=1):
+        hex_surf = pygame.Surface()
+        n, r = vertex_count, radius
+        pygame.draw.polygon(hex_surf, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
+
+    def draw_hex_map(self, surface: pygame.Surface, radius):
+
+        
+
+        pass

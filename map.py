@@ -34,6 +34,27 @@ class Tile:
         self.bears = []
 
 '''
+Point class
+
+Simple structure representing x,y as Cartesian coordinates
+'''
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+'''
+Cube class
+'''
+
+class Cube:
+    def __init__(self, q, r, s):
+        self.q = q
+        self.r = r
+        self.s = s
+
+'''
 Hex class
 
 Class represents axial coordinates of one hexagonal polygon
@@ -100,6 +121,61 @@ class HexGrid:
         # r - rows
         self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for q in range(0, self.size)] for r in range(0, self.size)]
 
+    @staticmethod
+    def calculate_size_needed(width, height, hex_radius):
+        '''
+        Calculate N, where 2D array of hexes is NxN, needed
+        to represent a hexagonal map from the generated perlin noise map.
+        '''
+        pass
+
+    @staticmethod
+    def cube_to_axial(cube: Cube):
+        q = cube.q
+        r = cube.r
+        return Hex(q, r)
+    
+    @staticmethod
+    def axial_to_cube(hex: Hex):
+        q = hex.q
+        r = hex.r
+        s = -q-r
+        return Cube(q, r, s)
+
+    @staticmethod
+    def flat_hex_to_pixel(radius, hex: Hex):
+        x = radius * ((3.0/2)   * hex.q)
+        y = radius * (sqrt(3)/2 * hex.q + sqrt(3) * hex.r)
+        return (x, y)
+    
+    @staticmethod
+    def pixel_to_flat_hex(point: Point, radius) -> int:
+        q = ( 2.0/3 * point.x) / radius
+        r = (-1.0/3 * point.x + sqrt(3)/3 * point.y) / radius
+
+    @staticmethod
+    def cube_round(cube: Cube):
+        q = round(cube.q)
+        r = round(cube.r)
+        s = round(cube.s)
+
+        q_diff = abs(q - cube.q)
+        r_diff = abs(r - cube.r)
+        s_diff = abs(s - cube.s)
+
+        if q_diff > r_diff and q_diff > s_diff:
+            q = -r-s
+        elif r_diff > s_diff:
+            r = -q-s
+        else:
+            s = -q-r
+
+        return Cube(q, r, s)
+    
+    @staticmethod
+    def axial_round(hex: Hex):
+        return HexGrid.cube_to_axial(HexGrid.cube_round(HexGrid.axial_to_cube(hex)))
+
 '''
 Map class
 Default noise will be set at the time of creation of the Map.
@@ -127,11 +203,7 @@ class Map:
         self.map_height = map_height
         self.pnoise = PerlinNoise(octaves=start_octaves)
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
-        self.grid = None
-
-    def generate_grid(self) -> None:
-        if self.noise is None:
-            return
+        self.hex_grid = HexGrid()
 
     def draw(self, screen) -> None:
         pass
