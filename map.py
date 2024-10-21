@@ -46,6 +46,10 @@ class Point:
 
     def __str__(self):
         return f"X: {self.x} Y:{self.y}"
+    
+    @staticmethod
+    def fromtuple(tuple):
+        return Point(tuple[0], tuple[1])
 
 '''
 Cube class
@@ -71,6 +75,8 @@ class Hex:
 
     def __str__(self):
         return f"Q:{self.q} R: {self.r}"
+    
+    # def __add__(self, b: Hex)
 
 '''
 HexGrid class
@@ -81,11 +87,22 @@ Taken from https://www.redblobgames.com/grids/hexagons/
 
 Hexagonal grid starts with leftmost hex with q=0, r=0
 Hexagonal grid is composed of flat-top oriented hexagons.
+
+TODO: Draw pointy-top hexagons or try to make a ring, starting from
+      the middle of the map. I think that this 2D array I am making
+      is enough to support this. Just start drawing rings.
+      Calculate the q,r coords of the middle hexagon and start from there:
+      1. Get first hexagon at 0,0
+      2. Get map rect and get middle x,y
+      3. Convert x,y to hex.
+      Calculate how many rings we need to support to fill the map.
+      (MapHeight / 2) / Radius 
 '''
 
 class HexGrid:
     def __init__(self, size=None) -> None:
         self.size = size # no of rings
+        print(f"Hex grid size: {self.size}")
         self.grid = None
         self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
         self.generate_grid()
@@ -109,6 +126,9 @@ class HexGrid:
         return Hex(hex.q * factor, hex.r * factor)
     
     def get_axial_ring(self, center_hex: Hex, radius):
+        '''
+        Radius means N number of rings
+        '''
         results = []
         next_hex = self.axial_add(center_hex, self.axial_scale(self.axial_direction(4), radius))
         for i in range(0, 6):
@@ -118,6 +138,9 @@ class HexGrid:
         return results
     
     def get_spiral_axial_ring(self, center: Hex, radius):
+        '''
+        Radius means N number of rings
+        '''
         results = [center]
         for i in range(1, radius):
             results.extend(self.get_axial_ring(center, i))
@@ -126,7 +149,7 @@ class HexGrid:
     def generate_grid(self):
         # q - columns
         # r - rows
-        self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for q in range(0, self.size)] for r in range(0, self.size)]
+        self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for r in range(0, self.size)] for q in range(0, self.size)]
 
     @staticmethod
     def calculate_grid_size_needed(width, height, hex_radius):
@@ -135,7 +158,11 @@ class HexGrid:
         to represent a hexagonal map from the generated perlin noise map.
 
         '''
-        return (width//hex_radius*2, height//hex_radius*2)
+        return (width//hex_radius, height//(hex_radius))
+    
+    @staticmethod
+    def calculate_axial_rings_needed(height, hex_radius):
+        return ((height // 2) // (hex_radius) - 1)
 
     @staticmethod
     def cube_to_axial(cube: Cube) -> Hex:
@@ -157,9 +184,10 @@ class HexGrid:
         return Point(x, y)
     
     @staticmethod
-    def pixel_to_flat_hex(point: Point, radius) -> int:
+    def pixel_to_flat_hex(point: Point, radius) -> Hex:
         q = ( 2.0/3 * point.x) / radius
         r = (-1.0/3 * point.x + sqrt(3)/3 * point.y) / radius
+        return HexGrid.axial_round(Hex(q, r))
 
     @staticmethod
     def cube_round(cube: Cube):

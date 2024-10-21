@@ -1,12 +1,14 @@
 import pygame
 from math import cos, pi, sin
 from pathlib import Path
-from map import Map, HexGrid
+from map import Map, HexGrid, Point, Hex
 
 COLOR_MOUNTAIN = (117, 99, 73)
 COLOR_FOREST = (27, 117, 35)
 COLOR_FIELD = (77, 212, 47)
 COLOR_RIVER = (21, 67, 232)
+
+DEFAULT_HEX_RADIUS = 15
 
 '''
 Pygame basics:
@@ -113,6 +115,7 @@ class App:
         path_to_font_file = Path(".") / "pixelify_sans.ttf"
         self.main_font = pygame.font.Font(path_to_font_file, size=18)
         self.title_font = pygame.font.Font(path_to_font_file, size=30)
+        self.little_font = pygame.font.Font(path_to_font_file, size=12)
         self.screen = pygame.display.set_mode(size=(App.WIDTH, App.HEIGHT))
         self.map = None #Map(start_octaves=6, screen_width=App.WIDTH, screen_height=App.HEIGHT) 
         # TODO: it takes a huge amount of time to make map. First, blit to the screen that we're generating map
@@ -128,10 +131,9 @@ class App:
         # pygame.display.update()
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
-        default_hex_radius = 10
         mw, mh = self.draw_starting_screen()
         if mw is None or mh is None: return
-        self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh, hex_radius=default_hex_radius)
+        self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh, hex_radius=DEFAULT_HEX_RADIUS)
         self.draw_map_gen_screen()
 
     def draw_starting_screen(self) -> tuple[int, int]:
@@ -201,8 +203,9 @@ class App:
         map_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         map_surf.fill((0, 0, 0))
 
-        hex_grid_surf = pygame.Surface((800, 800))
-        hex_grid_surf.fill((0, 0, 0))
+        hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
+        hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
+        # hex_grid_surf.fill((0, 0, 0))
 
         # Slider do zmieniania hex_radius
 
@@ -213,31 +216,31 @@ class App:
                     return
 
             map_surf.fill((0,0,0))
-            # Maybe put noise map onto different surface?
-            # Yes, and then - scale that surface if needed
             # Do we need to set_at continuously?
             for i, x in enumerate(self.map.noise_map):
                 for j, nval in enumerate(x):
                     
                     if nval >= Map.T_MOUNTAIN_THRESH:
                         map_surf.set_at((j, i), COLOR_MOUNTAIN)
-                    
+
                     elif nval >= Map.T_FOREST_THRESH:
                         map_surf.set_at((j, i), COLOR_FOREST)
-
+                        
                     elif nval >= Map.T_FIELD_THRESH:
                         map_surf.set_at((j, i), COLOR_FIELD)
-                    
+
                     else:
                         map_surf.set_at((j, i), COLOR_RIVER)
             
             # Blit map [V]
-            # Blit hexes
+            # Blit hexes [V]
 
+            self.draw_hex_map(hex_grid_surf, self.map.hex_radius)
+            # or just scale the map_surf after blitting hex grid surf...
+            map_surf.blit(hex_grid_surf, (0,0))
+            # self.screen.blit(hex_grid_surf, (0,0))
             map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
-            # self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
-            self.draw_hex_map(hex_grid_surf, 10)
-            self.screen.blit(hex_grid_surf, (50,50))
+            self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
             pygame.display.update()
 
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
@@ -252,13 +255,55 @@ class App:
     #     pass
 
     def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
-        n = self.map.hex_grid.size
-        for r in range(0, n):
-            for q in range(0, n):
-                hex = self.map.hex_grid.grid[q][r].hex
-                point = HexGrid.flat_hex_to_pixel(radius, hex)
-                x, y = point.x, point.y
-                self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+        '''
+        TODO: Draw pointy-top hexagons or try to make a ring, starting from
+        the middle of the map. I think that this 2D array I am making
+        is enough to support this. Just start drawing rings.
+        Calculate the q,r coords of the middle hexagon and start from there:
+        1. Get first hexagon at 0,0
+        2. Get map rect and get middle x,y
+        3. Convert x,y to hex.
+        Calculate how many rings we need to support to fill the map.
+        (MapHeight / 2) / Radius
+        Q -> OFFSET TO THE LOWER RIGHT R -> ROW
+
+        The idea would be to somehow blit these hexes once to map
+        and never get this calculations in loop.
+        Maybe make copy before clearing or something
+        '''
+
+        surface_center_point = Point.fromtuple(hex_map_surface.get_rect().center)
+        middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, radius)
+
+        start_hex = HexGrid.flat_hex_to_pixel(radius, Hex(0, 0))
+        # self.draw_polygon_at_x_y(hex_map_surface, start_hex.x, start_hex.y, radius, (255,255,255), 6)
+
+        print(f"MIDDLE HEX: {middle_hex}")
+        # hex_map_surface.blit(t_hexpos, (surface_center_point.x-6, surface_center_point.y-6))
+        # self.draw_polygon_at_x_y(hex_map_surface, surface_center_point.x, surface_center_point.y, radius, (255,255,255), 6)
+        # print(HexGrid.calculate_axial_rings_needed(hex_map_surface.get_height(), radius))
+
+        n_rings = HexGrid.calculate_axial_rings_needed(hex_map_surface.get_height(), radius)
+        for hex_vector in self.map.hex_grid.get_spiral_axial_ring(middle_hex, n_rings):
+            # Hex vector is an offset from the start TODO: WHY?
+            # print(hex_vector)
+            hex_to_draw = self.map.hex_grid.axial_add(hex_vector, Hex(0, 0))
+            # print(hex_to_draw)
+            point = HexGrid.flat_hex_to_pixel(radius, hex_to_draw)
+            x, y = point.x, point.y
+            t_hexpos = self.little_font.render(f"{hex_to_draw.r},{hex_to_draw.q}", False, (255, 255, 255))
+            hex_map_surface.blit(t_hexpos, (x-4,y-3))
+            self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+
+        # n = self.map.hex_grid.size
+        # for q in range(0, n):
+        #     for r in range(0, n):
+        #         hex = self.map.hex_grid.grid[q][r].hex
+        #         point = HexGrid.flat_hex_to_pixel(radius, hex)
+        #         x, y = point.x, point.y
+        #         t_hexpos = self.little_font.render(f"{r},{q}", False, (255, 255, 255))
+        #         hex_map_surface.blit(t_hexpos, (x-4, y-3))
+        #         self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
 
     def quit(self) -> None:
         pygame.font.quit()
