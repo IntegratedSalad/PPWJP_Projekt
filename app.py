@@ -8,7 +8,7 @@ COLOR_FOREST = (27, 117, 35)
 COLOR_FIELD = (77, 212, 47)
 COLOR_RIVER = (21, 67, 232)
 
-DEFAULT_HEX_RADIUS = 15
+DEFAULT_HEX_RADIUS = 14
 
 '''
 Pygame basics:
@@ -16,7 +16,7 @@ Surface is space onto which we can draw shapes; for example by calling
 pygame.draw.rect when we have rect or multiple rects.
 It can set color and copy these pixels onto passed surface.
 Then, we can blit (copy) everything what we've composed
-onto screen surface (main canvas) that gets drawn.
+onto the screen surface (main canvas) that gets drawn.
 '''
 
 '''
@@ -25,6 +25,7 @@ Composes of three rects:
 on_rect = from 0 to button rect
 off_rect = from button rect to self width
 button_rect = separates on and off sides
+Maybe inherit from pygame.Rect?
 '''
 class Slider:
     def __init__(self, font, x, y, width, height, min_val, max_val, color_left=(31, 120, 255), color_right=(4, 51, 122), color_button=(255, 255, 255)) -> None:
@@ -52,7 +53,7 @@ class Slider:
 
     def get_composition(self) -> pygame.Surface:
         '''
-        Blit this surface onto screen surface
+        Returns surface to blit onto screen surface
         '''
         slider_surface = pygame.Surface((self.width, self.height))
         pygame.draw.rect(slider_surface, self.color_left, self.on_rect)
@@ -103,6 +104,7 @@ App sets everything up:
 Surface to blit everything (screen)
 Every instance that needs to be in memory for the whole time
 Maybe App draws everything? At least for now.
+Maybe define class "View", that can have some return field
 '''
 class App:
     WIDTH = 1024
@@ -116,10 +118,9 @@ class App:
         self.main_font = pygame.font.Font(path_to_font_file, size=18)
         self.title_font = pygame.font.Font(path_to_font_file, size=30)
         self.little_font = pygame.font.Font(path_to_font_file, size=12)
+        self.little_font_arial = pygame.font.SysFont("Arial", 10)
         self.screen = pygame.display.set_mode(size=(App.WIDTH, App.HEIGHT))
         self.map = None #Map(start_octaves=6, screen_width=App.WIDTH, screen_height=App.HEIGHT) 
-        # TODO: it takes a huge amount of time to make map. First, blit to the screen that we're generating map
-        # register font
         self.t_misioland = self.title_font.render("MisioLand", False, (255, 255, 255))
 
     def run(self):
@@ -205,9 +206,15 @@ class App:
 
         hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
+
         # hex_grid_surf.fill((0, 0, 0))
 
         # Slider do zmieniania hex_radius
+
+        surface_center_point = Point.fromtuple(hex_grid_surf.get_rect().center)
+        middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, self.map.hex_radius)
+        # Make grid here
+        self.map.hex_grid.generate_grid(middle_hex, hex_grid_surf.get_height(), self.map.hex_radius)
 
         while True:
             for event in pygame.event.get():
@@ -234,6 +241,9 @@ class App:
             
             # Blit map [V]
             # Blit hexes [V]
+            # Make hexes selectable []
+            # At the end, maybe make subset of hex map?
+            # Those that are offscreen shouldn't be in memory
 
             self.draw_hex_map(hex_grid_surf, self.map.hex_radius)
             # or just scale the map_surf after blitting hex grid surf...
@@ -251,13 +261,10 @@ class App:
         n, r = vertex_count, radius
         pygame.draw.polygon(surface, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
 
-    # def draw_hex_at_center_x_y(self, surface: pygame.Surface, x, y, radius, color, width=1):
-    #     pass
-
     def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
         '''
-        TODO: Draw pointy-top hexagons or try to make a ring, starting from
-        the middle of the map. I think that this 2D array I am making
+        Make a ring, starting from the middle of the map. 
+        I think that this 2D array I am making
         is enough to support this. Just start drawing rings.
         Calculate the q,r coords of the middle hexagon and start from there:
         1. Get first hexagon at 0,0
@@ -272,38 +279,37 @@ class App:
         Maybe make copy before clearing or something
         '''
 
-        surface_center_point = Point.fromtuple(hex_map_surface.get_rect().center)
-        middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, radius)
+        offsetq = self.map.hex_grid.offsetq
+        offsetr = self.map.hex_grid.offsetr
 
-        start_hex = HexGrid.flat_hex_to_pixel(radius, Hex(0, 0))
-        # self.draw_polygon_at_x_y(hex_map_surface, start_hex.x, start_hex.y, radius, (255,255,255), 6)
+        for r in range(0, self.map.hex_grid.size):
+            for q in range(0, self.map.hex_grid.size):
+                hex_to_draw = self.map.hex_grid.grid[q][r]
+                if hex_to_draw is not None:
+                    new_q = hex_to_draw.q - offsetq
+                    new_r = hex_to_draw.r - offsetr
+                    new_h = Hex(new_q, new_r)
+                    point = HexGrid.flat_hex_to_pixel(radius, new_h)
+                    x, y = point.x, point.y
+                    t_hexpos = self.little_font_arial.render(f"Q:{new_q}R:{new_r},", False, (255, 255, 255))
+                    hex_map_surface.blit(t_hexpos, (x-8,y-5))
+                    self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
 
-        print(f"MIDDLE HEX: {middle_hex}")
-        # hex_map_surface.blit(t_hexpos, (surface_center_point.x-6, surface_center_point.y-6))
-        # self.draw_polygon_at_x_y(hex_map_surface, surface_center_point.x, surface_center_point.y, radius, (255,255,255), 6)
-        # print(HexGrid.calculate_axial_rings_needed(hex_map_surface.get_height(), radius))
+        # surface_center_point = Point.fromtuple(hex_map_surface.get_rect().center)
+        # middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, radius)
 
-        n_rings = HexGrid.calculate_axial_rings_needed(hex_map_surface.get_height(), radius)
-        for hex_vector in self.map.hex_grid.get_spiral_axial_ring(middle_hex, n_rings):
-            # Hex vector is an offset from the start TODO: WHY?
-            # print(hex_vector)
-            hex_to_draw = self.map.hex_grid.axial_add(hex_vector, Hex(0, 0))
-            # print(hex_to_draw)
-            point = HexGrid.flat_hex_to_pixel(radius, hex_to_draw)
-            x, y = point.x, point.y
-            t_hexpos = self.little_font.render(f"{hex_to_draw.r},{hex_to_draw.q}", False, (255, 255, 255))
-            hex_map_surface.blit(t_hexpos, (x-4,y-3))
-            self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+        # n_rings = 14
+        # for hex_vector in self.map.hex_grid.get_spiral_axial_ring(middle_hex, n_rings):
+        #     # hex_vector is a offset vector from the middle
 
-        # n = self.map.hex_grid.size
-        # for q in range(0, n):
-        #     for r in range(0, n):
-        #         hex = self.map.hex_grid.grid[q][r].hex
-        #         point = HexGrid.flat_hex_to_pixel(radius, hex)
-        #         x, y = point.x, point.y
-        #         t_hexpos = self.little_font.render(f"{r},{q}", False, (255, 255, 255))
-        #         hex_map_surface.blit(t_hexpos, (x-4, y-3))
-        #         self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+        #     print(f"DIFF:{self.map.hex_grid.axial_add(hex_vector, middle_hex)}")
+
+        #     hex_to_draw = self.map.hex_grid.axial_add(hex_vector, Hex(0, 0))
+        #     point = HexGrid.flat_hex_to_pixel(radius, hex_to_draw)
+        #     x, y = point.x, point.y
+        #     t_hexpos = self.little_font_arial.render(f"Q:{hex_to_draw.q}R:{hex_to_draw.r},", False, (255, 255, 255))
+        #     hex_map_surface.blit(t_hexpos, (x-8,y-5))
+        #     self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
 
     def quit(self) -> None:
         pygame.font.quit()

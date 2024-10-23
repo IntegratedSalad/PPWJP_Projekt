@@ -105,7 +105,11 @@ class HexGrid:
         print(f"Hex grid size: {self.size}")
         self.grid = None
         self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
-        self.generate_grid()
+        self.radius = None # TODO: Set this
+        self.maxr = 0
+        self.maxq = 0
+        self.offsetq = 0
+        self.offsetr = 0
 
     def axial_direction(self, dir):
         return self.directions[dir]
@@ -146,19 +150,48 @@ class HexGrid:
             results.extend(self.get_axial_ring(center, i))
         return results
     
-    def generate_grid(self):
+    def generate_grid(self, middle_hex, surface_height, radius) -> dict:
         # q - columns
         # r - rows
-        self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for r in range(0, self.size)] for q in range(0, self.size)]
 
-    @staticmethod
-    def calculate_grid_size_needed(width, height, hex_radius):
-        '''
-        Calculate N, where 2D array of hexes is NxN, needed
-        to represent a hexagonal map from the generated perlin noise map.
+        # self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for r in range(0, self.size)] for q in range(0, self.size)]
+        n_rings = HexGrid.calculate_axial_rings_needed(surface_height, radius)
+        spiral_axial_ring = self.get_spiral_axial_ring(middle_hex, n_rings)
+        self.size = len(spiral_axial_ring) # too big
+        self.grid = [[None for r in range(0, self.size)] for q in range(0, self.size)]
 
-        '''
-        return (width//hex_radius, height//(hex_radius))
+        minq = 1000
+        minr = 1000
+        hexes = []
+
+        for next_hex in self.get_spiral_axial_ring(middle_hex, n_rings):
+            hex_to_draw = self.axial_add(next_hex, Hex(0, 0)) # offset from start
+            if hex_to_draw.q < minq:
+                minq = hex_to_draw.q
+            if hex_to_draw.r < minr:
+                minr = hex_to_draw.r
+                
+            if hex_to_draw.q > self.maxq:
+                self.maxq = hex_to_draw.q
+            if hex_to_draw.r > self.maxr:
+                self.maxr = hex_to_draw.r
+            hexes.append(hex_to_draw)
+
+        self.offsetq = -minq
+        self.offsetr = -minr
+        for hex in hexes:
+            hex.q += self.offsetq
+            hex.r += self.offsetr
+            self.grid[hex.q][hex.r] = hex
+
+    # @staticmethod
+    # def calculate_grid_size_needed(width, height, hex_radius):
+    #     '''
+    #     Calculate N, where 2D array of hexes is NxN, needed
+    #     to represent a hexagonal map from the generated perlin noise map.
+
+    #     '''
+    #     return (width//hex_radius, height//hex_radius)
     
     @staticmethod
     def calculate_axial_rings_needed(height, hex_radius):
@@ -241,7 +274,7 @@ class Map:
         self.pnoise = PerlinNoise(octaves=start_octaves)
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
         # assuming width and height are the same
-        self.hex_grid = HexGrid(HexGrid.calculate_grid_size_needed(self.map_width, self.map_height, self.hex_radius)[0])
+        self.hex_grid = HexGrid()
 
     def draw(self, screen) -> None:
         pass
