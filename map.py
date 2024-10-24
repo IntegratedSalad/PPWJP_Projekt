@@ -1,6 +1,6 @@
 from perlin_noise import PerlinNoise
 from enum import Enum
-from math import sqrt, sin, cos
+from math import sqrt
 
 MAX_FOOD = 50
 
@@ -170,7 +170,7 @@ class HexGrid:
                 minq = hex_to_draw.q
             if hex_to_draw.r < minr:
                 minr = hex_to_draw.r
-                
+
             if hex_to_draw.q > self.maxq:
                 self.maxq = hex_to_draw.q
             if hex_to_draw.r > self.maxr:

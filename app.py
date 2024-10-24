@@ -9,6 +9,8 @@ COLOR_FIELD = (77, 212, 47)
 COLOR_RIVER = (21, 67, 232)
 
 DEFAULT_HEX_RADIUS = 14
+MIN_HEX_RADIUS = 10
+MAX_HEX_RADIUS = 20
 
 '''
 Pygame basics:
@@ -105,6 +107,12 @@ Surface to blit everything (screen)
 Every instance that needs to be in memory for the whole time
 Maybe App draws everything? At least for now.
 Maybe define class "View", that can have some return field
+
+Screens:
+
+1. Mapgen
+2. Hexgen
+3. Beargen & biomegen
 '''
 class App:
     WIDTH = 1024
@@ -132,12 +140,14 @@ class App:
         # pygame.display.update()
         # self.map = Map(start_octaves=5.7, screen_width=App.WIDTH, screen_height=App.HEIGHT)
 
-        mw, mh = self.draw_starting_screen()
+        # Maybe FSM for screen choice?
+
+        mw, mh = self.draw_mapgen_screen()
         if mw is None or mh is None: return
         self.map = Map(start_octaves=5.7, map_width=mw, map_height=mh, hex_radius=DEFAULT_HEX_RADIUS)
-        self.draw_map_gen_screen()
+        self.draw_hexgen_screen()
 
-    def draw_starting_screen(self) -> tuple[int, int]:
+    def draw_mapgen_screen(self) -> tuple[int, int]:
         
         # choose map dimensions, number of starting bears etc.
         slider1 = Slider(self.main_font, 0, 0, 80, 20, 300, 450)
@@ -194,7 +204,11 @@ class App:
 
             pygame.display.update()
     
-    def draw_map_gen_screen(self) -> None:
+    def draw_hexgen_screen(self) -> pygame.Surface:
+        '''
+        This method should return hexagon map,
+        with each hexagon in one solid color representing each biome.
+        '''
         # define clock
         # show generation of map
 
@@ -203,65 +217,79 @@ class App:
 
         map_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         map_surf.fill((0, 0, 0))
+        map_surf_scaled = None
 
         hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
-
-        # hex_grid_surf.fill((0, 0, 0))
-
         # Slider do zmieniania hex_radius
 
         surface_center_point = Point.fromtuple(hex_grid_surf.get_rect().center)
         middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, self.map.hex_radius)
-        # Make grid here
         self.map.hex_grid.generate_grid(middle_hex, hex_grid_surf.get_height(), self.map.hex_radius)
 
+        '''
+        Set pixels here, because in self.draw_hex_map
+        we will be iterating over pixels in each hexagon,
+        to determine the 'biome'
+        '''
+        for i, x in enumerate(self.map.noise_map):
+            for j, nval in enumerate(x):
+                if nval >= Map.T_MOUNTAIN_THRESH:
+                    map_surf.set_at((j, i), COLOR_MOUNTAIN)
+                elif nval >= Map.T_FOREST_THRESH:
+                    map_surf.set_at((j, i), COLOR_FOREST)
+                elif nval >= Map.T_FIELD_THRESH:
+                    map_surf.set_at((j, i), COLOR_FIELD)
+                else:
+                    map_surf.set_at((j, i), COLOR_RIVER)
+        map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
+
+        hex_grid_surf.blit(map_surf_scaled, (0, 0))
+        self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
+
+        t_keypress = self.main_font.render("(G)", False, (255,255,255))
+        t_next = self.main_font.render("Next ->", False, (255,255,255))
+        t_generating_biomes = self.main_font.render("Generating biomes...", False, (255,255,255))
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.quit()
                     return
-
-            map_surf.fill((0,0,0))
-            # Do we need to set_at continuously?
-            for i, x in enumerate(self.map.noise_map):
-                for j, nval in enumerate(x):
-                    
-                    if nval >= Map.T_MOUNTAIN_THRESH:
-                        map_surf.set_at((j, i), COLOR_MOUNTAIN)
-
-                    elif nval >= Map.T_FOREST_THRESH:
-                        map_surf.set_at((j, i), COLOR_FOREST)
-                        
-                    elif nval >= Map.T_FIELD_THRESH:
-                        map_surf.set_at((j, i), COLOR_FIELD)
-
-                    else:
-                        map_surf.set_at((j, i), COLOR_RIVER)
-            
-            # Blit map [V]
-            # Blit hexes [V]
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_g:
+                        self.screen.fill((0, 0, 0))
+                        self.screen.blit(t_generating_biomes, ((App.WIDTH // 2) - len("(G)") - 50, App.HEIGHT / 2))
+                        pygame.display.update()
+                        return map_surf_scaled
+                # TODO: If grid resized and r pressed, blit again
             # Make hexes selectable []
             # At the end, maybe make subset of hex map?
             # Those that are offscreen shouldn't be in memory
 
-            self.draw_hex_map(hex_grid_surf, self.map.hex_radius)
             # or just scale the map_surf after blitting hex grid surf...
             map_surf.blit(hex_grid_surf, (0,0))
             # self.screen.blit(hex_grid_surf, (0,0))
             map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
             self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
+            self.screen.blit(t_keypress, (App.WIDTH - len("(G)")- 90, self.screen.get_rect().centery))
+            self.screen.blit(t_next, (App.WIDTH - len("Next ->") - 100, self.screen.get_rect().centery + 11))
             pygame.display.update()
+
+    def draw_biomegen_screen():
+        pass
 
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
         pygame.draw.polygon(surface, color, [(surface.get_width()/2 + r * cos(2 * pi * i / n), surface.get_height()/2 + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
 
-    def draw_polygon_at_x_y(self, surface: pygame.Surface, x, y, radius, color, vertex_count, width=1):
+    def draw_polygon_at_x_y(self, surface: pygame.Surface, x, y, radius, color, vertex_count, width=1) -> pygame.Rect:
         n, r = vertex_count, radius
-        pygame.draw.polygon(surface, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
+        return pygame.draw.polygon(surface, color, [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)], width=width)
 
-    def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
+    def count_pixels_in_polygon(self, polygon: pygame.Rect):
+        pass
+
+    def set_hex_map(self, hex_map_surface: pygame.Surface, radius):
         '''
         Make a ring, starting from the middle of the map. 
         I think that this 2D array I am making
@@ -277,6 +305,11 @@ class App:
         The idea would be to somehow blit these hexes once to map
         and never get this calculations in loop.
         Maybe make copy before clearing or something
+
+        Maybe blit every hex onto separate surface, so we can
+        easily iterate over each and every one.
+        Then, we blit the map onto each and every one or just
+        iterate over pixels over x,y span of each one of them.
         '''
 
         offsetq = self.map.hex_grid.offsetq
@@ -290,26 +323,43 @@ class App:
                     new_r = hex_to_draw.r - offsetr
                     new_h = Hex(new_q, new_r)
                     point = HexGrid.flat_hex_to_pixel(radius, new_h)
-                    x, y = point.x, point.y
-                    t_hexpos = self.little_font_arial.render(f"Q:{new_q}R:{new_r},", False, (255, 255, 255))
-                    hex_map_surface.blit(t_hexpos, (x-8,y-5))
-                    self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+                    px, py = point.x, point.y
+                    # t_hexpos = self.little_font_arial.render(f"Q:{new_q}R:{new_r},", False, (255, 255, 255))
+                    # hex_map_surface.blit(t_hexpos, (x-8,y-5))
+                    hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, (255,255,255), 6)
 
-        # surface_center_point = Point.fromtuple(hex_map_surface.get_rect().center)
-        # middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, radius)
+                    hw, hh = hex_rect.size
+                    hx, hy = hex_rect.x, hex_rect.y
 
-        # n_rings = 14
-        # for hex_vector in self.map.hex_grid.get_spiral_axial_ring(middle_hex, n_rings):
-        #     # hex_vector is a offset vector from the middle
+                    COLOR_MOUNTAIN_ALPHA = (117, 99, 73, 255)
+                    COLOR_FOREST_ALPHA = (27, 117, 35, 255)
+                    COLOR_FIELD_ALPHA = (77, 212, 47, 255)
+                    COLOR_RIVER_ALPHA = (21, 67, 232, 255)
+                    color_count = {COLOR_MOUNTAIN_ALPHA: 0,
+                                   COLOR_FOREST_ALPHA: 0,
+                                   COLOR_FIELD_ALPHA: 0,
+                                   COLOR_RIVER_ALPHA: 0}
 
-        #     print(f"DIFF:{self.map.hex_grid.axial_add(hex_vector, middle_hex)}")
+                    for x in range(hx, hx+hw):
+                        for y in range(hy, hy+hh):
+                            color = tuple(hex_map_surface.get_at((y,x)))
+                            print(color)
 
-        #     hex_to_draw = self.map.hex_grid.axial_add(hex_vector, Hex(0, 0))
-        #     point = HexGrid.flat_hex_to_pixel(radius, hex_to_draw)
-        #     x, y = point.x, point.y
-        #     t_hexpos = self.little_font_arial.render(f"Q:{hex_to_draw.q}R:{hex_to_draw.r},", False, (255, 255, 255))
-        #     hex_map_surface.blit(t_hexpos, (x-8,y-5))
-        #     self.draw_polygon_at_x_y(hex_map_surface, x, y, radius, (255,255,255), 6)
+                            if color in color_count.keys():
+                                color_count[color] += 1
+
+                    max_color = max(color_count, key=color_count.get)
+                    
+                    # TODO: Set data for individual hexagon in self.map.hex_grid.grid!!
+
+                    filled_hex = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6, width=0)
+                    
+                    print(max_color)
+                    # print(f"RECT S:{hex_rect.size}")
+                    # print(f"RECT C:{hex_rect.x}|{hex_rect.y}")
+
+                    # musimy dostac wycinek szesciokata z mapa...
+                    # Or just make these calculations here...
 
     def quit(self) -> None:
         pygame.font.quit()
