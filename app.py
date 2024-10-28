@@ -201,9 +201,9 @@ class App:
         # Mapa z szesciokatami takze musi byc na osobnym surface!!!
         self.screen.fill((0, 0, 0))
 
-        map_surf = pygame.Surface((self.map.map_width, self.map.map_height))
-        map_surf.fill((0, 0, 0))
-        map_surf_scaled = None
+        world_surf = pygame.Surface((self.map.map_width, self.map.map_height))
+        world_surf.fill((0, 0, 0))
+        world_surf_scaled = None
 
         hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
@@ -230,16 +230,16 @@ class App:
         for i, x in enumerate(self.map.noise_map):
             for j, nval in enumerate(x):
                 if nval >= Map.T_MOUNTAIN_THRESH:
-                    map_surf.set_at((j, i), COLOR_MOUNTAIN)
+                    world_surf.set_at((j, i), COLOR_MOUNTAIN)
                 elif nval >= Map.T_FOREST_THRESH:
-                    map_surf.set_at((j, i), COLOR_FOREST)
+                    world_surf.set_at((j, i), COLOR_FOREST)
                 elif nval >= Map.T_FIELD_THRESH:
-                    map_surf.set_at((j, i), COLOR_FIELD)
+                    world_surf.set_at((j, i), COLOR_FIELD)
                 else:
-                    map_surf.set_at((j, i), COLOR_RIVER)
-        map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
+                    world_surf.set_at((j, i), COLOR_RIVER)
+        world_surf_scaled = pygame.transform.scale(world_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
 
-        hex_grid_surf.blit(map_surf_scaled, (0, 0))
+        hex_grid_surf.blit(world_surf_scaled, (0, 0)) # blit perlin noise onto hex surface, to analyze the data
         self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
 
         t_keypress = self.main_font.render("(G)", False, (255,255,255))
@@ -256,13 +256,13 @@ class App:
                     if event.key == pygame.K_g:
                         self.screen.fill((0, 0, 0))
                         pygame.display.update()
-                        return map_surf_scaled
+                        return world_surf_scaled
             
             mousepos_x, mousepos_y = pygame.mouse.get_pos()
-            if map_surf_scaled is not None:
-                actual_map_surface = pygame.transform.scale(map_surf_scaled, (self.map.map_width*1.5, self.map.map_height*1.5)).get_rect(center=self.screen.get_rect().center)
-                _x, _y = actual_map_surface.x, actual_map_surface.y
-                if actual_map_surface.collidepoint(mousepos_x, mousepos_y):
+            if world_surf_scaled is not None:
+                world_surf_scaled = pygame.transform.scale(world_surf_scaled, (self.map.map_width*1.5, self.map.map_height*1.5)).get_rect(center=self.screen.get_rect().center) # scale it in case it wasn't
+                _x, _y = world_surf_scaled.x, world_surf_scaled.y
+                if world_surf_scaled.collidepoint(mousepos_x, mousepos_y):
                     mousepos_x -= _x
                     mousepos_y -= _y
                     mousepos_x /= 1.5
@@ -270,8 +270,6 @@ class App:
                     print(mousepos_x, mousepos_y)
 
                     hex = HexGrid.pixel_to_flat_hex(Point.fromtuple((mousepos_x, mousepos_y)), self.map.hex_grid.radius)
-                    # hex = self.map.hex_grid.get_hex_at_x_y(mousepos_x, mousepos_y)
-                    # tile = self.map.hex_grid.get_tile_at_x_y(mousepos_x, mousepos_y)
                     if hex is not None:
                         print(hex)
                         hex_to_draw = self.map.hex_grid.get_offset_hex(hex)
@@ -279,22 +277,17 @@ class App:
                         px, py = point.x, point.y
                         self.draw_polygon_at_x_y(select_hex_surface, px, py, self.map.hex_grid.radius, COLOR_SELECT_GREEN, 6, width=0)
 
-                    # BUG: Hexes are offscreen!
-
                 # TODO: If grid resized and r pressed, blit again
-            # Make hexes selectable []
             # At the end, maybe make subset of hex map?
             # Those that are offscreen shouldn't be in memory
 
-            # or just scale the map_surf after blitting hex grid surf...
-            map_surf.blit(hex_grid_surf, (0,0))
-            # self.screen.blit(hex_grid_surf, (0,0))
-            map_surf_scaled = pygame.transform.scale(map_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
-            self.screen.blit(map_surf_scaled, map_surf_scaled.get_rect(center=self.screen.get_rect().center))
+            world_surf.blit(hex_grid_surf, (0,0))
+            world_surf_scaled = pygame.transform.scale(world_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
+            self.screen.blit(world_surf_scaled, world_surf_scaled.get_rect(center=self.screen.get_rect().center))
             self.screen.blit(t_keypress, (App.WIDTH - len("(G)")- 90, self.screen.get_rect().centery))
             self.screen.blit(t_next, (App.WIDTH - len("Next ->") - 100, self.screen.get_rect().centery + 11))
             select_hex_surface_scaled = pygame.transform.scale(select_hex_surface, (self.map.map_width*1.5, self.map.map_height*1.5))
-            self.screen.blit(select_hex_surface_scaled, (map_surf_scaled.get_rect(center=self.screen.get_rect().center)))
+            self.screen.blit(select_hex_surface_scaled, (world_surf_scaled.get_rect(center=self.screen.get_rect().center)))
             pygame.display.update()
 
     def draw_biomegen_screen():
@@ -334,24 +327,17 @@ class App:
         iterate over pixels over x,y span of each one of them.
 
         This function blits pixels onto hex_map_surface
+
+        TODO: Split setting the hex map and drawing the hex map...
         '''
-
-        offsetq = self.map.hex_grid.offsetq
-        offsetr = self.map.hex_grid.offsetr
-
-        # TODO: Method for getting an offset hex in hex grid class
 
         for r in range(0, self.map.hex_grid.size):
             for q in range(0, self.map.hex_grid.size):
                 hex_to_draw = self.map.hex_grid.grid[q][r]
                 if hex_to_draw is not None:
-                    new_q = hex_to_draw.q - offsetq
-                    new_r = hex_to_draw.r - offsetr
-                    new_h = Hex(new_q, new_r)
+                    new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
                     point = HexGrid.flat_hex_to_pixel(radius, new_h)
                     px, py = point.x, point.y
-                    # t_hexpos = self.little_font_arial.render(f"Q:{new_q}R:{new_r},", False, (255, 255, 255))
-                    # hex_map_surface.blit(t_hexpos, (x-8,y-5))
                     hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, (255,255,255), 6)
 
                     hw, hh = hex_rect.size
@@ -374,6 +360,9 @@ class App:
                     self.map.hex_grid.tiles[q][r].ttype = tile_type
 
                     filled_hex = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6, width=0)
+
+    def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
+        pass
         
     def quit(self) -> None:
         pygame.font.quit()
