@@ -1,4 +1,5 @@
 from perlin_noise import PerlinNoise
+from pygame import Color
 from enum import Enum
 from math import sqrt
 
@@ -11,12 +12,24 @@ CLOCK_DIR_6 = 5
 CLOCK_DIR_7 = 4
 CLOCK_DIR_10 = 3
 
+COLOR_MOUNTAIN = (117, 99, 73, 255)
+COLOR_FOREST = (27, 117, 35, 255)
+COLOR_FIELD = (77, 212, 47, 255)
+COLOR_RIVER = (21, 67, 232, 255)
+COLOR_SELECT_GREEN = (0, 255, 0, 255)
+
 class TileType(Enum):
     T_MOUNTAINS = 1
     T_FOREST = 2
     T_FIELD = 3
     T_DESERT = 4
     T_RIVER = 5
+    T_VOID = 6
+
+color_to_type_map = {COLOR_MOUNTAIN : TileType.T_MOUNTAINS, 
+                     COLOR_FOREST : TileType.T_FOREST,
+                     COLOR_FIELD : TileType.T_FIELD,
+                     COLOR_RIVER: TileType.T_RIVER}
 
 '''
 Tile class
@@ -24,9 +37,8 @@ Tile class
 '''
 
 class Tile:
-    def __init__(self, hex, ttype) -> None:
-        self.hex = hex # does Tile needs hex?
-        self.ttype = ttype
+    def __init__(self, ttype) -> None:
+        self.ttype = ttype # biome
         self.fmeat_quantity = 0
         self.fapple_quantity = 0
         self.water_quantity = 0
@@ -100,12 +112,18 @@ TODO: Draw pointy-top hexagons or try to make a ring, starting from
 '''
 
 class HexGrid:
-    def __init__(self, size=None) -> None:
+    def __init__(self, radius, size=None) -> None:
         self.size = size # no of rings
         print(f"Hex grid size: {self.size}")
+
+        '''
+        grid and tiles are corelated.
+        accessing them by q,r accesses an individual Hex with its type
+        '''
         self.grid = None
+        self.tiles = None
         self.directions = [Hex(1, 0), Hex(1, -1), Hex(0, -1), Hex(-1, 0), Hex(-1, 1), Hex(0, 1)]
-        self.radius = None # TODO: Set this
+        self.radius = radius
         self.maxr = 0
         self.maxq = 0
         self.offsetq = 0
@@ -154,11 +172,12 @@ class HexGrid:
         # q - columns
         # r - rows
 
-        # self.grid = [[Tile(Hex(q, r), TileType.T_RIVER) for r in range(0, self.size)] for q in range(0, self.size)]
         n_rings = HexGrid.calculate_axial_rings_needed(surface_height, radius)
-        spiral_axial_ring = self.get_spiral_axial_ring(middle_hex, n_rings)
-        self.size = len(spiral_axial_ring) # too big
+        self.size = surface_height // radius
+        print(f"Size: {self.size}")
+        print(f"Rings: {n_rings}")
         self.grid = [[None for r in range(0, self.size)] for q in range(0, self.size)]
+        self.tiles = [[Tile(TileType.T_VOID) for r in range(0, self.size)] for q in range(0, self.size)]
 
         minq = 1000
         minr = 1000
@@ -192,10 +211,26 @@ class HexGrid:
 
     #     '''
     #     return (width//hex_radius, height//hex_radius)
+
+    def get_tile_type_from_color(self, color: Color) -> TileType:
+        return color_to_type_map[tuple(color)]
     
+    def get_hex_at_x_y(self, x, y):
+        hex = HexGrid.pixel_to_flat_hex(Point(x, y), self.radius)
+        return self.grid[hex.q][hex.r]
+    
+    def get_tile_at_x_y(self, x, y):
+        hex = HexGrid.pixel_to_flat_hex(Point(x, y), self.radius)
+        return self.tiles[hex.q][hex.r]
+    
+    def get_offset_hex(self, hex):
+        new_q = hex.q - self.offsetq
+        new_r = hex.r - self.offsetr
+        return Hex(new_q, new_r)
+        
     @staticmethod
     def calculate_axial_rings_needed(height, hex_radius):
-        return ((height // 2) // (hex_radius) - 1)
+        return ((height // 2) // (hex_radius) - 2)
 
     @staticmethod
     def cube_to_axial(cube: Cube) -> Hex:
@@ -274,7 +309,7 @@ class Map:
         self.pnoise = PerlinNoise(octaves=start_octaves)
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
         # assuming width and height are the same
-        self.hex_grid = HexGrid()
+        self.hex_grid = HexGrid(self.hex_radius)
 
     def draw(self, screen) -> None:
         pass
