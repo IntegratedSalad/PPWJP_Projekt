@@ -10,7 +10,7 @@ class HexGridBasicTest(unittest.TestCase):
     def setUpClass(cls):
         logging.basicConfig(
         filename="test_results.log",
-        filemode="a",
+        filemode="w",
         format='%(asctime)s %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logging.DEBUG
@@ -20,7 +20,7 @@ class HexGridBasicTest(unittest.TestCase):
         cls.logger.setLevel(logging.DEBUG)
         cls.fh = logging.FileHandler('test_results.log')
         cls.fh.setLevel(logging.DEBUG)
-        cls.fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+        cls.fh.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s]: %(message)s"))
         cls.logger.addHandler(cls.fh)
 
     def setUp(self):

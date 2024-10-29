@@ -6,6 +6,9 @@ Project for Python Basics course in uni.
 
 # Overview
 
+For now, hexagonal map is generated using perlin noise data
+![image info](./hexmap.png)
+
 ## Rules
 
 ### Bear
