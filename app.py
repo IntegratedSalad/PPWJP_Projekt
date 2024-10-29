@@ -307,28 +307,10 @@ class App:
     def set_hex_map(self, hex_map_surface: pygame.Surface, radius):
         '''
         Make a ring, starting from the middle of the map. 
-        I think that this 2D array I am making
-        is enough to support this. Just start drawing rings.
-        Calculate the q,r coords of the middle hexagon and start from there:
-        1. Get first hexagon at 0,0
-        2. Get map rect and get middle x,y
-        3. Convert x,y to hex.
-        Calculate how many rings we need to support to fill the map.
-        (MapHeight / 2) / Radius
-        Q -> OFFSET TO THE LOWER RIGHT R -> ROW
-
-        The idea would be to somehow blit these hexes once to map
-        and never get this calculations in loop.
-        Maybe make copy before clearing or something
-
-        Maybe blit every hex onto separate surface, so we can
-        easily iterate over each and every one.
-        Then, we blit the map onto each and every one or just
-        iterate over pixels over x,y span of each one of them.
-
-        This function blits pixels onto hex_map_surface
-
-        TODO: Split setting the hex map and drawing the hex map...
+        Hex grid' grid should be initialized by now.
+        This function draws hexagons in order to retrieve Rects
+        and analyze pixels within these rects to determine the tile
+        type of the hexagon.
         '''
 
         for r in range(0, self.map.hex_grid.size):
@@ -338,7 +320,7 @@ class App:
                     new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
                     point = HexGrid.flat_hex_to_pixel(radius, new_h)
                     px, py = point.x, point.y
-                    hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, (255,255,255), 6)
+                    hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, (255,255,255), 6) # outline
 
                     hw, hh = hex_rect.size
                     hx, hy = hex_rect.x, hex_rect.y
@@ -350,7 +332,6 @@ class App:
                     for x in range(hx, hx+hw):
                         for y in range(hy, hy+hh):
                             color = tuple(hex_map_surface.get_at((y,x)))
-
                             if color in color_count.keys():
                                 color_count[color] += 1
 
@@ -359,7 +340,7 @@ class App:
                     tile_type = self.map.hex_grid.get_tile_type_from_color(pygame.Color(max_color))
                     self.map.hex_grid.tiles[q][r].ttype = tile_type
 
-                    filled_hex = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6, width=0)
+                    self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6, width=0)
 
     def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
         pass
