@@ -148,9 +148,6 @@ class HexGrid:
         return Hex(hex.q * factor, hex.r * factor)
     
     def get_axial_ring(self, center_hex: Hex, radius):
-        '''
-        Radius means N number of rings
-        '''
         results = []
         next_hex = self.axial_add(center_hex, self.axial_scale(self.axial_direction(4), radius))
         for i in range(0, 6):
@@ -168,7 +165,7 @@ class HexGrid:
             results.extend(self.get_axial_ring(center, i))
         return results
     
-    def generate_grid(self, middle_hex, surface_height, radius) -> dict:
+    def generate_grid(self, middle_hex, surface_height, radius):
         # q - columns
         # r - rows
 
@@ -176,6 +173,7 @@ class HexGrid:
         self.size = surface_height // radius
         print(f"Size: {self.size}")
         print(f"Rings: {n_rings}")
+        print(f"S Height: {surface_height}")
         self.grid = [[None for r in range(0, self.size)] for q in range(0, self.size)]
         self.tiles = [[Tile(TileType.T_VOID) for r in range(0, self.size)] for q in range(0, self.size)]
 
