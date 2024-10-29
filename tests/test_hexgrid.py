@@ -8,10 +8,12 @@ class HexGridBasicTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        '''
+        Setup once per class, not once per every test method
+        '''
         logging.basicConfig(
         filename="test_results.log",
         filemode="w",
-        format='%(asctime)s %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logging.DEBUG
         )
@@ -28,6 +30,7 @@ class HexGridBasicTest(unittest.TestCase):
         self.hexgrid = HexGrid(self.radius)
 
     def test_generating_grid(self):
+        self.logger.info(f"Running test_generating_grid") # TODO: how to wrap this?
         middle_hex = Hex(3, 3)
         surface_height = 500
         radius = 10
@@ -36,13 +39,11 @@ class HexGridBasicTest(unittest.TestCase):
         self.assertIsNotNone(self.hexgrid.grid)
         self.assertIsNotNone(self.hexgrid.tiles)
 
-        # Use the class-level logger
         self.logger.info(f"Offset Q: {self.hexgrid.offsetq}")
         self.logger.info(f"Offset R: {self.hexgrid.offsetr}")
 
-        self.assertEqual(self.hexgrid.size, 50)
-        # The second assertion is redundant and can be removed or changed
-        # self.assertEqual(self.hexgrid.size, 50)
+        self.assertEqual(self.hexgrid.offsetq, 19)
+        self.assertEqual(self.hexgrid.offsetr, 19)
 
 if __name__ == "__main__":
     unittest.main()

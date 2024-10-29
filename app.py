@@ -278,8 +278,6 @@ class App:
                         self.draw_polygon_at_x_y(select_hex_surface, px, py, self.map.hex_grid.radius, COLOR_SELECT_GREEN, 6, width=0)
 
                 # TODO: If grid resized and r pressed, blit again
-            # At the end, maybe make subset of hex map?
-            # Those that are offscreen shouldn't be in memory
 
             world_surf.blit(hex_grid_surf, (0,0))
             world_surf_scaled = pygame.transform.scale(world_surf, (self.map.map_width*1.5, self.map.map_height*1.5))
