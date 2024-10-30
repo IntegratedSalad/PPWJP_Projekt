@@ -175,7 +175,8 @@ class HexGrid:
         print(f"Rings: {n_rings}")
         print(f"S Height: {surface_height}")
         self.grid = [[None for r in range(0, self.size)] for q in range(0, self.size)]
-        self.tiles = [[Tile(TileType.T_VOID) for r in range(0, self.size)] for q in range(0, self.size)]
+        self.tiles = [[Tile(TileType.T_VOID) for r in range(0, self.size)] 
+                      for q in range(0, self.size)]
 
         minq = 1000
         minr = 1000
@@ -319,7 +320,8 @@ class Map:
         newMin = 0.0
         oldRange = oldMax - oldMin
         newRange = newMax - newMin
-        return [[((((self.pnoise([i/X, j/Y]) - oldMin) * newRange) / oldRange) + newMin) for j in range(X)] for i in range(Y)]
+        return [[((((self.pnoise([i/X, j/Y]) - oldMin) * newRange) / oldRange) + newMin) 
+                 for j in range(X)] for i in range(Y)]
     
     def get_noise_map(self, X, Y):
         return [[self.pnoise([i/X, j/Y]) for j in range(X)] for i in range(Y)]
