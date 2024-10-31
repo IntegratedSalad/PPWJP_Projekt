@@ -101,8 +101,6 @@ class Hex:
     def __str__(self):
         return f"Q:{self.q} R: {self.r}"
     
-    # def __add__(self, b: Hex)
-
 '''
 HexGrid class
 
@@ -127,7 +125,7 @@ TODO: Draw pointy-top hexagons or try to make a ring, starting from
 class HexGrid:
     def __init__(self, radius, size=None) -> None:
         self.size = size # no of rings
-        print(f"Hex grid size: {self.size}")
+        # print(f"Hex grid size: {self.size}")
 
         '''
         grid and tiles are corelated.
@@ -184,9 +182,9 @@ class HexGrid:
 
         n_rings = HexGrid.calculate_axial_rings_needed(surface_height, radius)
         self.size = surface_height // radius
-        print(f"Size: {self.size}")
-        print(f"Rings: {n_rings}")
-        print(f"S Height: {surface_height}")
+        # print(f"Size: {self.size}")
+        # print(f"Rings: {n_rings}")
+        # print(f"S Height: {surface_height}")
         self.grid = [[None for r in range(0, self.size)] for q in range(0, self.size)]
         self.tiles = [[Tile(TileType.T_VOID) for r in range(0, self.size)] 
                       for q in range(0, self.size)]
@@ -307,6 +305,9 @@ The user can generate a Map before starting simulation by providing a seed and s
 Map has a 2D array (tiles) which corresponds to the hexes.
 Noise is drawn, by checking if the value exceeds a certain threshold.
 Hexes are generated from what values dominate in the hex area
+
+TODO: This class should provide an interface for drawing, utilizing the
+methods in HexGrid.
 '''
 
 class Map:
@@ -330,9 +331,6 @@ class Map:
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
         # assuming width and height are the same
         self.hex_grid = HexGrid(self.hex_radius)
-
-    def draw(self, screen) -> None:
-        pass
 
     def get_noise_map_normalized(self, X, Y):
         oldMin = (-1.0)

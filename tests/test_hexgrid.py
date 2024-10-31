@@ -48,5 +48,10 @@ class HexGridBasicTest(unittest.TestCase):
     # TODO: Test that setting the grid and tiles, setting a hex in grid, at some coordinates,
     # allows for access of this particular hex in tiles list.
 
+    # Make a few hexes and test accessing them by get_tile_from_hex, get_hex_at_x_y etc.
+    # We don't need a surface to generate some hexes.
+    # Just generate grid, mark some hexes, simulate mousepos_x, mousepos_y and use functions
+    # flat_hex_to_pixel / pixel_to_flat_hex
+
 if __name__ == "__main__":
     unittest.main()

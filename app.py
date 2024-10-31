@@ -69,7 +69,6 @@ class Slider:
         pygame.draw.rect(slider_surface, self.color_right, self.off_rect)
         pygame.draw.rect(slider_surface, self.color_button, self.button_rect)
         self.rect = slider_surface.get_rect()
-
         return slider_surface
 
     def update(self, percent_on):
@@ -248,7 +247,6 @@ class App:
         select_hex_surface = pygame.Surface((self.map.map_width, self.map.map_height))
         select_hex_surface.fill((0, 0, 0))
         select_hex_surface.set_colorkey((0,0,0))
-        # TODDO: We can also separate the filled hexes and completely discard the noise
 
         '''
         Set pixels here, because in self.draw_hex_map
@@ -286,7 +284,7 @@ class App:
                     if event.key == pygame.K_g:
                         self.screen.fill((0, 0, 0))
                         pygame.display.update()
-                        return world_surf_scaled
+                        return world_surf_scaled # TODO: Blit this on new screen
 
             mousepos_x, mousepos_y = pygame.mouse.get_pos()
             if world_surf_scaled is not None:
@@ -305,6 +303,7 @@ class App:
                     hex = HexGrid.pixel_to_flat_hex(Point.fromtuple((mousepos_x, mousepos_y)),
                                                     self.map.hex_grid.radius)
                     if hex is not None:
+                        # use flat_hex_to_pixel, to always render a centered hex at q,r
                         point = HexGrid.flat_hex_to_pixel(self.map.hex_grid.radius, hex)
                         px, py = point.x, point.y
                         self.draw_polygon_at_x_y(select_hex_surface,
@@ -378,9 +377,6 @@ class App:
             [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)],
             width=width)
 
-    def count_pixels_in_polygon(self, polygon: pygame.Rect):
-        pass
-
     def set_hex_map(self, hex_map_surface: pygame.Surface, radius):
         '''
         Make a ring, starting from the middle of the map. 
@@ -431,6 +427,9 @@ class App:
         # if self.map.hex_grid
 
         pass
+
+    # def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
+        # pass
         
     def quit(self) -> None:
         pygame.font.quit()
