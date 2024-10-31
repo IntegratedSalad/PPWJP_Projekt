@@ -218,14 +218,21 @@ class App:
             pygame.display.update()
     
     def draw_hexgen_screen(self) -> pygame.Surface:
-        '''
-        This method should return hexagon map,
-        with each hexagon in one solid color representing each biome.
-        '''
+        """
+        This method not only draws hexgen screen, but sets the map's grid data as well.
+        # TODO -> is this too much for one function?
+
+        Steps involved in creating and generating grid data:
+        1. Grid generation by calling maps hex_grid "generate_grid" TODO: think of an interface maybe...
+        2. Setting pixels of the world_surf surface. This is the data needed to set grid.
+        3. Set hex map by calling self.set_hex_map:
+        """
         # TODO: define clock
         # show generation of map
 
         self.screen.fill((0, 0, 0))
+
+        # <----> Maybe separate this from here
 
         world_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         world_surf.fill((0, 0, 0))
@@ -242,6 +249,8 @@ class App:
         self.screen.blit(t_generating_hexgrid,
                          (App.WIDTH / 2 - len("Generating hexgrid..."), App.HEIGHT / 2))
         pygame.display.update()
+
+        # 1. Generate grid
         self.map.hex_grid.generate_grid(middle_hex, hex_grid_surf.get_height(), self.map.hex_radius)
 
         select_hex_surface = pygame.Surface((self.map.map_width, self.map.map_height))
@@ -266,9 +275,13 @@ class App:
         world_surf_scaled = pygame.transform.scale(world_surf,
                                                    (self.map.map_width*1.5, self.map.map_height*1.5))
 
-        # blit perlin noise onto hex surface, to analyze the data
+        # 2. blit perlin noise onto hex surface, to analyze the data
         hex_grid_surf.blit(world_surf_scaled, (0, 0))
+
+        # 3. Set hex map
         self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
+
+        # <------> to here?
 
         t_keypress = self.main_font.render("(G)", False, (255,255,255))
         t_next = self.main_font.render("Next ->", False, (255,255,255))
@@ -378,7 +391,7 @@ class App:
             width=width)
 
     def set_hex_map(self, hex_map_surface: pygame.Surface, radius):
-        '''
+        """
         Make a ring, starting from the middle of the map. 
         Hex grid' grid should be initialized by now.
         This function draws hexagons in order to retrieve Rects
@@ -387,8 +400,24 @@ class App:
 
         This method should be in hexgrid. It shouldn't draw anything.
         It should return list of hex surfaces to blit, and it should be called
-        'analyze_hex_map', 
-        '''
+        'analyze_noise_map'.
+
+        This method iterates of all q,r coordinates of the maps' hex grid 2D list size 
+        (row and column size HxH of hexagons) and accesses hexagons within.
+        Each hexagon has to be offset, by global offset of the hex grid instance.
+        Then, we get it's pixel coordinates to blit this hexagon to the screen.
+        We iterate over every pixel in the hexagon rectangle area, to count pixels
+        and decide upon it's tile type.
+        At hex_rect, we draw it's outline, and at the end, it's filling.
+
+        So, to effectively blit hexagons, with their data set:
+        1. Iterate over self.map.hex_grid
+        2. Offset the hex
+        3. Draw it.
+
+        TODO: Maybe separate this into two functions? They will be somewhat similar,
+        but we don't need to return anything from this
+        """
 
         for r in range(0, self.map.hex_grid.size):
             for q in range(0, self.map.hex_grid.size):

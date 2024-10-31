@@ -177,6 +177,30 @@ class HexGrid:
         return results
     
     def generate_grid(self, middle_hex, surface_height, radius):
+        """
+        Generate grid
+
+        Generating grid involves setting the self.grid and self.tiles
+        attributes of this class.
+
+        Set self.size to the rough estimate of surface height divided by hex radius
+
+        All of the tile types in self.tiles are set to T_VOID.
+        All of the hexes in self.grid are set to None, and then,
+        certain number of them are set according to the spiral pattern.
+
+        We calculate n_rings, which is the number of ring shapes around the
+        middle_hex - essentialy the q,r coordinates of a hexagon
+        placed in the middle of the map surface.
+        N rings equals height divided by 2 divided by hex radius
+        This N rings are then generated with get_spiral_axial_ring.
+        All of the hexagons' coordinates are then shifted by a global offset.
+        We want these hexagons (their coordinates q,r) to function as list indeces,
+        and negative values are not suited for this.
+
+        After this, all hexes of the spiral pattern are set into the correct
+        places at q,r in the 2D list self.grid.
+        """
         # q - columns
         # r - rows
 
@@ -345,5 +369,8 @@ class Map:
     def get_noise_map(self, X, Y):
         return [[self.pnoise([i/X, j/Y]) for j in range(X)] for i in range(Y)]
 
-    def regenerate_noise(self, seed):
+    def initialize_grid(self):
+        """
+        Maybe this function as an interface for this hexgrid?
+        """
         pass
