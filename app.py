@@ -305,7 +305,6 @@ class App:
                     hex = HexGrid.pixel_to_flat_hex(Point.fromtuple((mousepos_x, mousepos_y)),
                                                     self.map.hex_grid.radius)
                     if hex is not None:
-                        print(hex)
                         point = HexGrid.flat_hex_to_pixel(self.map.hex_grid.radius, hex)
                         px, py = point.x, point.y
                         self.draw_polygon_at_x_y(select_hex_surface,
@@ -318,8 +317,18 @@ class App:
                         
                         # In order to get the original hex, we have to reverse the offset operation,
                         # because in this instance, hex coordinates are after the offset.
-                        print(self.map.hex_grid.get_tile_from_hex(self.map.hex_grid.get_deoffset_hex(hex)))
-                        print(mousepos_x, mousepos_y)
+                        selected_hex_tile = self.map.hex_grid.get_tile_from_hex(
+                            self.map.hex_grid.get_deoffset_hex(hex))
+
+                        t_selected_type = pygame.font.Font.render(self.little_font, 
+                                                                  selected_hex_tile.get_tile_type_str(),
+                                                                  False,
+                                                                  (255,255,255))
+                        text_rect = t_selected_type.get_rect()
+                        text_surf = pygame.Surface((text_rect.width, text_rect.height))
+                        text_surf.fill((1,1,1))
+                        text_surf.blit(t_selected_type, (0,0))
+                        select_hex_surface.blit(text_surf, (px,py))
 
                 # TODO: If grid resized and r pressed, blit again
 

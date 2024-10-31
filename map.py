@@ -31,6 +31,13 @@ color_to_type_map = {COLOR_MOUNTAIN : TileType.T_MOUNTAINS,
                      COLOR_FIELD : TileType.T_FIELD,
                      COLOR_RIVER: TileType.T_RIVER}
 
+tile_type_to_str = {TileType.T_MOUNTAINS: "mountains",
+                    TileType.T_FOREST: "forest",
+                    TileType.T_FIELD: "field",
+                    TileType.T_DESERT: "desert",
+                    TileType.T_RIVER: "river",
+                    TileType.T_VOID: "void"}
+
 '''
 Tile class
 [...]
@@ -47,6 +54,9 @@ class Tile:
 
     def __str__(self):
         return f"TYPE: {self.ttype}"
+    
+    def get_tile_type_str(self):
+        return tile_type_to_str[self.ttype]
 
 '''
 Point class
@@ -225,7 +235,7 @@ class HexGrid:
         hex = HexGrid.pixel_to_flat_hex(Point(x, y), self.radius)
         return self.tiles[hex.q][hex.r]
     
-    def get_tile_from_hex(self, hex):
+    def get_tile_from_hex(self, hex) -> Tile:
         return self.tiles[hex.q][hex.r]
 
     def get_offset_hex(self, hex):

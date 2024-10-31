@@ -1,4 +1,3 @@
-import pygame
 from app import App
 
 td = '''
