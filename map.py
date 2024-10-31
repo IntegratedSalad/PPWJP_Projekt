@@ -45,6 +45,9 @@ class Tile:
         self.pos_in_list = 0
         self.bears = []
 
+    def __str__(self):
+        return f"TYPE: {self.ttype}"
+
 '''
 Point class
 
@@ -213,20 +216,28 @@ class HexGrid:
 
     def get_tile_type_from_color(self, color: Color) -> TileType:
         return color_to_type_map[tuple(color)]
-    
+
     def get_hex_at_x_y(self, x, y):
         hex = HexGrid.pixel_to_flat_hex(Point(x, y), self.radius)
         return self.grid[hex.q][hex.r]
-    
+
     def get_tile_at_x_y(self, x, y):
         hex = HexGrid.pixel_to_flat_hex(Point(x, y), self.radius)
         return self.tiles[hex.q][hex.r]
     
+    def get_tile_from_hex(self, hex):
+        return self.tiles[hex.q][hex.r]
+
     def get_offset_hex(self, hex):
         new_q = hex.q - self.offsetq
         new_r = hex.r - self.offsetr
         return Hex(new_q, new_r)
-        
+    
+    def get_deoffset_hex(self, hex):
+        new_q = hex.q + self.offsetq
+        new_r = hex.r + self.offsetr
+        return Hex(new_q, new_r)
+
     @staticmethod
     def calculate_axial_rings_needed(height, hex_radius):
         return ((height // 2) // (hex_radius) - 2)
@@ -236,7 +247,7 @@ class HexGrid:
         q = cube.q
         r = cube.r
         return Hex(q, r)
-    
+
     @staticmethod
     def axial_to_cube(hex: Hex) -> Cube:
         q = hex.q

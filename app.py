@@ -176,12 +176,12 @@ class App:
                 if event.type == pygame.QUIT:
                     self.quit()
                     return (None, None)
-                
+
                 if pygame.mouse.get_pressed()[0]:
                     mousepos = pygame.mouse.get_pos()
                     if slider_rect.collidepoint(mousepos):
                         slider1.slide(abs(mousepos[0]), mousepos[1])
-                
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_g:
                         self.screen.fill((0, 0, 0))
@@ -223,10 +223,9 @@ class App:
         This method should return hexagon map,
         with each hexagon in one solid color representing each biome.
         '''
-        # define clock
+        # TODO: define clock
         # show generation of map
 
-        # Mapa z szesciokatami takze musi byc na osobnym surface!!!
         self.screen.fill((0, 0, 0))
 
         world_surf = pygame.Surface((self.map.map_width, self.map.map_height))
@@ -288,7 +287,7 @@ class App:
                         self.screen.fill((0, 0, 0))
                         pygame.display.update()
                         return world_surf_scaled
-            
+
             mousepos_x, mousepos_y = pygame.mouse.get_pos()
             if world_surf_scaled is not None:
                 world_surf_scaled = pygame.transform.scale(
@@ -302,13 +301,11 @@ class App:
                     mousepos_y -= _y
                     mousepos_x /= 1.5
                     mousepos_y /= 1.5
-                    print(mousepos_x, mousepos_y)
 
                     hex = HexGrid.pixel_to_flat_hex(Point.fromtuple((mousepos_x, mousepos_y)),
                                                     self.map.hex_grid.radius)
                     if hex is not None:
                         print(hex)
-                        hex_to_draw = self.map.hex_grid.get_offset_hex(hex)
                         point = HexGrid.flat_hex_to_pixel(self.map.hex_grid.radius, hex)
                         px, py = point.x, point.y
                         self.draw_polygon_at_x_y(select_hex_surface,
@@ -318,6 +315,12 @@ class App:
                                                  COLOR_SELECT_GREEN,
                                                  6,
                                                  width=0)
+                        
+                        # In order to get the original hex, we have to reverse the offset operation,
+                        # because in this instance, hex coordinates are after the offset.
+                        print(self.map.hex_grid.get_tile_from_hex(self.map.hex_grid.get_deoffset_hex(hex)))
+                        print(mousepos_x, mousepos_y)
+
                 # TODO: If grid resized and r pressed, blit again
 
             world_surf.blit(hex_grid_surf, (0,0))
@@ -389,29 +392,30 @@ class App:
                     new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
                     point = HexGrid.flat_hex_to_pixel(radius, new_h)
                     px, py = point.x, point.y
-                    hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, 
-                                                        (255,255,255), 6) # outline
+                    if (px >= 0) and (py >= 0):
+                        hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, 
+                                                            (255,255,255), 6) # outline
 
-                    hw, hh = hex_rect.size
-                    hx, hy = hex_rect.x, hex_rect.y
-                    color_count = {COLOR_MOUNTAIN: 0,
-                                   COLOR_FOREST: 0,
-                                   COLOR_FIELD: 0,
-                                   COLOR_RIVER: 0}
-                    
-                    for x in range(hx, hx+hw):
-                        for y in range(hy, hy+hh):
-                            color = tuple(hex_map_surface.get_at((y,x)))
-                            if color in color_count.keys():
-                                color_count[color] += 1
+                        hw, hh = hex_rect.size
+                        hx, hy = hex_rect.x, hex_rect.y
+                        color_count = {COLOR_MOUNTAIN: 0,
+                                    COLOR_FOREST: 0,
+                                    COLOR_FIELD: 0,
+                                    COLOR_RIVER: 0}
 
-                    max_color = max(color_count, key=color_count.get)
+                        for x in range(hx, hx+hw):
+                            for y in range(hy, hy+hh):
+                                color = tuple(hex_map_surface.get_at((y,x)))
+                                if color in color_count.keys():
+                                    color_count[color] += 1
 
-                    tile_type = self.map.hex_grid.get_tile_type_from_color(pygame.Color(max_color))
-                    self.map.hex_grid.tiles[q][r].ttype = tile_type
+                        max_color = max(color_count, key=color_count.get)
 
-                    self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6,
-                                             width=0)
+                        tile_type = self.map.hex_grid.get_tile_type_from_color(pygame.Color(max_color))
+                        self.map.hex_grid.tiles[q][r].ttype = tile_type
+
+                        self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6,
+                                                width=0)
 
     def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
         

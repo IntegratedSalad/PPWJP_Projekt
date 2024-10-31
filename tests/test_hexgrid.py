@@ -45,5 +45,8 @@ class HexGridBasicTest(unittest.TestCase):
         self.assertEqual(self.hexgrid.offsetq, 19)
         self.assertEqual(self.hexgrid.offsetr, 19)
 
+    # TODO: Test that setting the grid and tiles, setting a hex in grid, at some coordinates,
+    # allows for access of this particular hex in tiles list.
+
 if __name__ == "__main__":
     unittest.main()
