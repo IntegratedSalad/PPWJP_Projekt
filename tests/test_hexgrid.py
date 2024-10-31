@@ -1,10 +1,20 @@
 import unittest
 import logging
-import sys
-from pathlib import Path
 from ..map import Hex, HexGrid
+from functools import wraps
+
 
 class HexGridBasicTest(unittest.TestCase):
+    
+    def print_header(self): # outer decorator, assignment of test_func = print_header() returns dec
+        def dec(f): # function that is assigned to test_func and invoked, when test is invoked 
+            @wraps(f) # preserve information about f, our test_func
+            def wrapper(*args, **kwargs):
+                print(f"Running {f.__name__}")
+                r = f(*args, **kwargs)
+                return r
+            return wrapper
+        return dec
 
     @classmethod
     def setUpClass(cls):
@@ -24,11 +34,12 @@ class HexGridBasicTest(unittest.TestCase):
         cls.fh.setLevel(logging.DEBUG)
         cls.fh.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s]: %(message)s"))
         cls.logger.addHandler(cls.fh)
-
+    
     def setUp(self):
         self.radius = 0
         self.hexgrid = HexGrid(self.radius)
 
+    @print_header
     def test_generating_grid(self):
         self.logger.info(f"Running test_generating_grid") # TODO: how to wrap this?
         middle_hex = Hex(3, 3)
@@ -48,7 +59,7 @@ class HexGridBasicTest(unittest.TestCase):
     # TODO: Test that setting the grid and tiles, setting a hex in grid, at some coordinates,
     # allows for access of this particular hex in tiles list.
 
-    # Make a few hexes and test accessing them by get_tile_from_hex, get_hex_at_x_y etc.
+    # TODO: Make a few hexes and test accessing them by get_tile_from_hex, get_hex_at_x_y etc.
     # We don't need a surface to generate some hexes.
     # Just generate grid, mark some hexes, simulate mousepos_x, mousepos_y and use functions
     # flat_hex_to_pixel / pixel_to_flat_hex
