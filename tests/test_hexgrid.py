@@ -67,6 +67,7 @@ class HexGridBasicTest(unittest.TestCase):
     # Because we know the size of the hexagon etc. - we can e.g. generate an image
     # that is half mountains half river (half of it is the color of river and other half of mountains)
     # Then, we calculate how much river hexes and how much mountain hexes there are.
+    # These tests have to be done later!.
 
 if __name__ == "__main__":
     unittest.main()
