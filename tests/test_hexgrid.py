@@ -62,5 +62,11 @@ class HexGridBasicTest(unittest.TestCase):
     # Just generate grid, mark some hexes, simulate mousepos_x, mousepos_y and use functions
     # flat_hex_to_pixel / pixel_to_flat_hex
 
+    # TODO: Also, generate a fixed size color map with known color sizes.
+    # Then, we can calculate how much hexagons of each color there should be.
+    # Because we know the size of the hexagon etc. - we can e.g. generate an image
+    # that is half mountains half river (half of it is the color of river and other half of mountains)
+    # Then, we calculate how much river hexes and how much mountain hexes there are.
+
 if __name__ == "__main__":
     unittest.main()

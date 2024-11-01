@@ -1,7 +1,9 @@
 from perlin_noise import PerlinNoise
-from pygame import Color
+from pygame import Color, Surface, SRCALPHA
+from pygame.draw import polygon
+from pygame.mask import from_surface
 from enum import Enum
-from math import sqrt
+from math import sqrt, cos, sin, pi
 
 MAX_FOOD = 50
 
@@ -30,6 +32,13 @@ color_to_type_map = {COLOR_MOUNTAIN : TileType.T_MOUNTAINS,
                      COLOR_FOREST : TileType.T_FOREST,
                      COLOR_FIELD : TileType.T_FIELD,
                      COLOR_RIVER: TileType.T_RIVER}
+
+type_to_color_map = {
+    TileType.T_MOUNTAINS: COLOR_MOUNTAIN,
+    TileType.T_FOREST: COLOR_FOREST,
+    TileType.T_FIELD: COLOR_FIELD,
+    TileType.T_RIVER: COLOR_RIVER
+}
 
 tile_type_to_str = {TileType.T_MOUNTAINS: "mountains",
                     TileType.T_FOREST: "forest",
@@ -237,15 +246,57 @@ class HexGrid:
             hex.r += self.offsetr
             self.grid[hex.q][hex.r] = hex
 
-    # @staticmethod
-    # def calculate_grid_size_needed(width, height, hex_radius):
-    #     '''
-    #     Calculate N, where 2D array of hexes is NxN, needed
-    #     to represent a hexagonal map from the generated perlin noise map.
+    def set_grid_with_noise_map(self, noise_map_surface: Surface):
+        for r in range(self.size):
+            for q in range(self.size):
+                hex_to_draw = self.grid[q][r]
+                if hex_to_draw is not None:
+                    new_h = self.get_offset_hex(hex_to_draw)
+                    point = HexGrid.flat_hex_to_pixel(self.radius, new_h)
+                    px, py = point.x, point.y
+                    if (px >= 0) and (py >= 0):
+                        n, r_hex = 6, self.radius
+                        hex_points = [
+                            (px + r_hex * cos(2 * pi * i / n), py + r_hex * sin(2 * pi * i / n))
+                            for i in range(n)
+                        ]
+                        min_x = int(min(point[0] for point in hex_points))
+                        max_x = int(max(point[0] for point in hex_points))
+                        min_y = int(min(point[1] for point in hex_points))
+                        max_y = int(max(point[1] for point in hex_points))
+                        width = max_x - min_x
+                        height = max_y - min_y
 
-    #     '''
-    #     return (width//hex_radius, height//hex_radius)
+                        temp_surface = Surface((width, height), SRCALPHA)
+                        adjusted_points = [
+                            (point[0] - min_x, point[1] - min_y) for point in hex_points
+                        ]
 
+                        polygon(temp_surface, (255, 255, 255), adjusted_points)
+                        hex_mask = from_surface(temp_surface)
+                        color_count = {
+                            COLOR_MOUNTAIN: 0,
+                            COLOR_FOREST: 0,
+                            COLOR_FIELD: 0,
+                            COLOR_RIVER: 0,
+                        }
+
+                        for x in range(width):
+                            for y in range(height):
+                                if hex_mask.get_at((x, y)):
+                                    nx = min_x + x
+                                    ny = min_y + y
+                                    if (0 <= nx < noise_map_surface.get_width()) and \
+                                        (0 <= ny < noise_map_surface.get_height()):
+
+                                        color = tuple(noise_map_surface.get_at((nx, ny)))
+                                        if color in color_count:
+                                            color_count[color] += 1
+
+                        max_color = max(color_count, key=color_count.get)
+                        tile_type = self.get_tile_type_from_color(Color(max_color))
+                        self.tiles[q][r].ttype = tile_type
+                        
     def get_tile_type_from_color(self, color: Color) -> TileType:
         return color_to_type_map[tuple(color)]
 
@@ -369,7 +420,17 @@ class Map:
     def get_noise_map(self, X, Y):
         return [[self.pnoise([i/X, j/Y]) for j in range(X)] for i in range(Y)]
 
-    def initialize_grid(self):
+    def set_grid(self, noise_map_surface: Surface):
+        self.hex_grid.set_grid_with_noise_map(noise_map_surface)
+
+    def get_tile_type_at_tile_q_r(self, q, r):
+        tile = self.hex_grid.tiles[q][r].ttype
+        if tile == TileType.T_VOID: 
+            return None
+        else: 
+            return tile 
+
+    def initialize_grid(self, middle_hex, surface_height):
         """
         Maybe this function as an interface for this hexgrid?
         """

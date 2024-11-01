@@ -3,6 +3,7 @@ from math import cos, pi, sin
 from pathlib import Path
 from map import Map, HexGrid, Point
 from map import COLOR_RIVER, COLOR_MOUNTAIN, COLOR_FIELD, COLOR_FOREST, COLOR_SELECT_GREEN
+from map import type_to_color_map
 DEFAULT_HEX_RADIUS = 8
 MIN_HEX_RADIUS = 5
 MAX_HEX_RADIUS = 18
@@ -216,6 +217,9 @@ class App:
             self.screen.blit(hex_surf, (50, 50))
 
             pygame.display.update()
+
+    def set_hexgen(self) -> pygame.Surface:
+        pass
     
     def draw_hexgen_screen(self) -> pygame.Surface:
         """
@@ -229,10 +233,8 @@ class App:
         """
         # TODO: define clock
         # show generation of map
-
-        self.screen.fill((0, 0, 0))
-
         # <----> Maybe separate this from here
+        self.screen.fill((0, 0, 0))
 
         world_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         world_surf.fill((0, 0, 0))
@@ -257,11 +259,6 @@ class App:
         select_hex_surface.fill((0, 0, 0))
         select_hex_surface.set_colorkey((0,0,0))
 
-        '''
-        Set pixels here, because in self.draw_hex_map
-        we will be iterating over pixels in each hexagon,
-        to determine the 'biome'
-        '''
         for i, x in enumerate(self.map.noise_map):
             for j, nval in enumerate(x):
                 if nval >= Map.T_MOUNTAIN_THRESH:
@@ -279,7 +276,9 @@ class App:
         hex_grid_surf.blit(world_surf_scaled, (0, 0))
 
         # 3. Set hex map
-        self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
+        # self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
+        self.map.set_grid(hex_grid_surf)
+        self.draw_hex_map(hex_grid_surf)
 
         # <------> to here?
 
@@ -389,73 +388,26 @@ class App:
             color,
             [(x + r * cos(2 * pi * i / n), y + r * sin(2 * pi * i / n)) for i in range(n)],
             width=width)
-
-    def set_hex_map(self, hex_map_surface: pygame.Surface, radius):
-        """
-        Make a ring, starting from the middle of the map. 
-        Hex grid' grid should be initialized by now.
-        This function draws hexagons in order to retrieve Rects
-        and analyze pixels within these rects to determine the tile
-        type of the hexagon.
-
-        This method should be in hexgrid. It shouldn't draw anything.
-        It should return list of hex surfaces to blit, and it should be called
-        'analyze_noise_map'.
-
-        This method iterates of all q,r coordinates of the maps' hex grid 2D list size 
-        (row and column size HxH of hexagons) and accesses hexagons within.
-        Each hexagon has to be offset, by global offset of the hex grid instance.
-        Then, we get it's pixel coordinates to blit this hexagon to the screen.
-        We iterate over every pixel in the hexagon rectangle area, to count pixels
-        and decide upon it's tile type.
-        At hex_rect, we draw it's outline, and at the end, it's filling.
-
-        So, to effectively blit hexagons, with their data set:
-        1. Iterate over self.map.hex_grid
-        2. Offset the hex
-        3. Draw it.
-
-        TODO: Maybe separate this into two functions? They will be somewhat similar,
-        but we don't need to return anything from this
-        """
-
+    
+    def draw_hex_map(self, hex_map_surface: pygame.Surface):
         for r in range(0, self.map.hex_grid.size):
             for q in range(0, self.map.hex_grid.size):
                 hex_to_draw = self.map.hex_grid.grid[q][r]
                 if hex_to_draw is not None:
                     new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
-                    point = HexGrid.flat_hex_to_pixel(radius, new_h)
+                    point = HexGrid.flat_hex_to_pixel(self.map.hex_radius, new_h)
                     px, py = point.x, point.y
                     if (px >= 0) and (py >= 0):
-                        hex_rect = self.draw_polygon_at_x_y(hex_map_surface, px, py, radius, 
-                                                            (255,255,255), 6) # outline
+                        self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius, 
+                                                (255,255,255), 6) # outline
+                        
+                        tiletype = self.map.get_tile_type_at_tile_q_r(q, r)
+                        if tiletype is not None:
+                            color = type_to_color_map[tiletype]
+                            print(f"Color: {color}")
+                            self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
+                                                    width=0) # filling
 
-                        hw, hh = hex_rect.size
-                        hx, hy = hex_rect.x, hex_rect.y
-                        color_count = {COLOR_MOUNTAIN: 0,
-                                    COLOR_FOREST: 0,
-                                    COLOR_FIELD: 0,
-                                    COLOR_RIVER: 0}
-
-                        for x in range(hx, hx+hw):
-                            for y in range(hy, hy+hh):
-                                color = tuple(hex_map_surface.get_at((y,x)))
-                                if color in color_count.keys():
-                                    color_count[color] += 1
-
-                        max_color = max(color_count, key=color_count.get)
-
-                        tile_type = self.map.hex_grid.get_tile_type_from_color(pygame.Color(max_color))
-                        self.map.hex_grid.tiles[q][r].ttype = tile_type
-
-                        self.draw_polygon_at_x_y(hex_map_surface, px, py, radius-1, max_color, 6,
-                                                width=0)
-
-    def draw_hex_map(self, hex_map_surface: pygame.Surface, radius):
-        
-        # if self.map.hex_grid
-
-        pass
 
     # def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
         # pass
