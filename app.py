@@ -4,9 +4,10 @@ from pathlib import Path
 from map import Map, HexGrid, Point
 from map import COLOR_RIVER, COLOR_MOUNTAIN, COLOR_FIELD, COLOR_FOREST, COLOR_SELECT_GREEN
 from map import type_to_color_map
-DEFAULT_HEX_RADIUS = 8
+DEFAULT_HEX_RADIUS = 7
 MIN_HEX_RADIUS = 5
 MAX_HEX_RADIUS = 18
+DEFAULT_PERLIN_NOISE_OCTAVES = 5.7
 
 '''
 Pygame basics:
@@ -145,12 +146,15 @@ class App:
 
     def run(self):
         # TODO: Maybe FSM for screen choice?
+        # TODO: define clock
         mw, mh = self.draw_mapgen_screen()
         if mw is None or mh is None: return
         self.map = Map(
-            start_octaves=5.7,
+            start_octaves=DEFAULT_PERLIN_NOISE_OCTAVES,
             map_width=mw, map_height=mh, hex_radius=DEFAULT_HEX_RADIUS)
-        self.draw_hexgen_screen()
+
+        world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface = self.set_hexgen()
+        self.draw_hexgen_screen(world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface)
 
     def draw_mapgen_screen(self) -> tuple[int, int]:
         
@@ -219,21 +223,13 @@ class App:
             pygame.display.update()
 
     def set_hexgen(self) -> pygame.Surface:
-        pass
-    
-    def draw_hexgen_screen(self) -> pygame.Surface:
         """
-        This method not only draws hexgen screen, but sets the map's grid data as well.
-        # TODO -> is this too much for one function?
-
         Steps involved in creating and generating grid data:
-        1. Grid generation by calling maps hex_grid "generate_grid" TODO: think of an interface maybe...
-        2. Setting pixels of the world_surf surface. This is the data needed to set grid.
-        3. Set hex map by calling self.set_hex_map:
+            1. Grid generation by calling maps hex_grid "generate_grid" 
+                TODO: think of an interface maybe...
+            2. Setting pixels of the world_surf surface. This is the data needed to set grid.
+            3. Set hex map by calling self.set_hex_map:
         """
-        # TODO: define clock
-        # show generation of map
-        # <----> Maybe separate this from here
         self.screen.fill((0, 0, 0))
 
         world_surf = pygame.Surface((self.map.map_width, self.map.map_height))
@@ -259,6 +255,7 @@ class App:
         select_hex_surface.fill((0, 0, 0))
         select_hex_surface.set_colorkey((0,0,0))
 
+        # Set pixels based on perlin noise
         for i, x in enumerate(self.map.noise_map):
             for j, nval in enumerate(x):
                 if nval >= Map.T_MOUNTAIN_THRESH:
@@ -276,16 +273,17 @@ class App:
         hex_grid_surf.blit(world_surf_scaled, (0, 0))
 
         # 3. Set hex map
-        # self.set_hex_map(hex_grid_surf, self.map.hex_radius) # blit hexes onto surface once
         self.map.set_grid(hex_grid_surf)
         self.draw_hex_map(hex_grid_surf)
 
-        # <------> to here?
+        return world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface
+
+    def draw_hexgen_screen(self, world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface) -> pygame.Surface:
 
         t_keypress = self.main_font.render("(G)", False, (255,255,255))
         t_next = self.main_font.render("Next ->", False, (255,255,255))
-
         select_hex_surface_scaled = None
+        
         while True:
             select_hex_surface.fill((0, 0, 0))
             for event in pygame.event.get():
