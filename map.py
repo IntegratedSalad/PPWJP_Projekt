@@ -428,7 +428,10 @@ class Map:
         if tile == TileType.T_VOID: 
             return None
         else: 
-            return tile 
+            return tile
+
+    def reset_hex_grid(self, new_radius):
+        self.hex_grid = HexGrid(new_radius)
 
     def initialize_grid(self, middle_hex, surface_height):
         """

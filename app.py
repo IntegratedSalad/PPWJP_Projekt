@@ -146,6 +146,7 @@ class App:
 
     def run(self):
         # TODO: Maybe FSM for screen choice?
+        # TODO: Maybe FSM for regenerating?
         # TODO: define clock
         mw, mh = self.draw_mapgen_screen()
         if mw is None or mh is None: return
@@ -153,8 +154,13 @@ class App:
             start_octaves=DEFAULT_PERLIN_NOISE_OCTAVES,
             map_width=mw, map_height=mh, hex_radius=DEFAULT_HEX_RADIUS)
 
-        world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface = self.set_hexgen()
-        self.draw_hexgen_screen(world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface)
+        world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface, hex_radius_slider = \
+            self.set_hexgen()
+        self.draw_hexgen_screen(world_surf, 
+                                world_surf_scaled, 
+                                hex_grid_surf, 
+                                select_hex_surface, 
+                                hex_radius_slider)
 
     def draw_mapgen_screen(self) -> tuple[int, int]:
         
@@ -191,7 +197,7 @@ class App:
                         self.screen.fill((0, 0, 0))
                         self.screen.blit(
                             t_generating_noise,
-                            (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2))
+                            (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2)) # TODO: move this to run
                         pygame.display.update()
                         return (slider1.value, slider1.value)
 
@@ -240,6 +246,17 @@ class App:
         hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
         # Slider do zmieniania hex_radius
 
+        hex_radius_slider = Slider(self.main_font, 
+                                   0, 
+                                   0, 
+                                   width=80, 
+                                   height=20, 
+                                   min_val=MIN_HEX_RADIUS, 
+                                   max_val=MAX_HEX_RADIUS)
+
+        # TODO: We probably need confirmation using some key to regenerate hexgen
+        # TODO: Regenerating noise map
+
         surface_center_point = Point.fromtuple(hex_grid_surf.get_rect().center)
         middle_hex = HexGrid.pixel_to_flat_hex(surface_center_point, self.map.hex_radius)
         t_generating_hexgrid = self.main_font.render("Generating hexgrid...", True, (255,255,255))
@@ -275,15 +292,21 @@ class App:
         # 3. Set hex map
         self.map.set_grid(hex_grid_surf)
         self.draw_hex_map(hex_grid_surf)
+        return world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface, hex_radius_slider
 
-        return world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface
-
-    def draw_hexgen_screen(self, world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface) -> pygame.Surface:
+    def draw_hexgen_screen(self, world_surf, 
+                           world_surf_scaled, 
+                           hex_grid_surf: pygame.Surface, 
+                           select_hex_surface,
+                           hex_radius_slider: Slider) -> pygame.Surface:
 
         t_keypress = self.main_font.render("(G)", False, (255,255,255))
         t_next = self.main_font.render("Next ->", False, (255,255,255))
         select_hex_surface_scaled = None
-        
+        slider_rect = None
+        slider_surface = pygame.Surface((hex_radius_slider.rect.width + 50, 
+                                        hex_radius_slider.rect.height + 50))
+
         while True:
             select_hex_surface.fill((0, 0, 0))
             for event in pygame.event.get():
@@ -294,7 +317,24 @@ class App:
                     if event.key == pygame.K_g:
                         self.screen.fill((0, 0, 0))
                         pygame.display.update()
-                        return world_surf_scaled # TODO: Blit this on new screen
+                        return world_surf_scaled # TODO: Blit this on new screen (view)
+                    if event.key == pygame.K_r:
+                        # TODO: Regenerate
+                        self.map.hex_radius = hex_radius_slider.value # TODO: Method in map to set radius in hexgrid as well
+                        self.map.hex_grid.radius = hex_radius_slider.value
+                        hex_grid_surf.fill((255,255,255))
+                        # TODO: Reset data
+                        self.screen.fill((0,0,0))
+
+                        self.map.reset_hex_grid(self.map.hex_radius)
+                        world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface, hex_radius_slider = \
+                            self.set_hexgen()
+                        self.draw_hex_map(hex_grid_surf)
+
+                if pygame.mouse.get_pressed()[0]:
+                    mousepos = pygame.mouse.get_pos()
+                    if slider_rect.collidepoint(mousepos):
+                        hex_radius_slider.slide(abs(mousepos[0]), mousepos[1])
 
             mousepos_x, mousepos_y = pygame.mouse.get_pos()
             if world_surf_scaled is not None:
@@ -341,6 +381,18 @@ class App:
 
                 # TODO: If grid resized and r pressed, blit again
 
+            slider_rect = self.screen.blit(hex_radius_slider.get_composition(), (
+                hex_radius_slider.width-50, App.HEIGHT/2))
+
+            hex_radius_slider.x, hex_radius_slider.y = slider_rect.x, slider_rect.y
+            hex_radius_slider.rect.x, hex_radius_slider.y = slider_rect.x, slider_rect.y
+
+            slider_surface.fill((0,0,0))
+            t_radius = self.main_font.render(f"Hex Radius: {hex_radius_slider.value}", False,
+                                    (255, 255, 255))
+            slider_surface.blit(t_radius, (0,0))
+            self.screen.blit(slider_surface, (slider_rect.x, slider_rect.y + slider_rect.height))
+
             world_surf.blit(hex_grid_surf, (0,0))
             world_surf_scaled = pygame.transform.scale(world_surf, 
                                                        (self.map.map_width*1.5, 
@@ -348,7 +400,7 @@ class App:
             self.screen.blit(world_surf_scaled,
                              world_surf_scaled.get_rect(center=self.screen.get_rect().center))
             self.screen.blit(t_keypress,
-                             (App.WIDTH - len("(G)")- 90,
+                             (App.WIDTH - len("(G)") - 90,
                              self.screen.get_rect().centery))
             self.screen.blit(t_next,
                              (App.WIDTH - len("Next ->") - 100,
@@ -405,7 +457,6 @@ class App:
                             print(f"Color: {color}")
                             self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
                                                     width=0) # filling
-
 
     # def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
         # pass
