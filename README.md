@@ -1,4 +1,5 @@
 # TeddyLand
+TeddyLand - an evolution simulation using pygame
 **TeddyLand**, an evolution simulation with bears in Python using pygame, inspired directly by [this video](https://www.youtube.com/watch?v=H1NXC4QeTok&ab_channel=EightLittleBears).
 
 Project for Python Basics course in uni.

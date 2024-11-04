@@ -142,7 +142,7 @@ class App:
         self.little_font_arial = pygame.font.SysFont("Arial", 10)
         self.screen = pygame.display.set_mode(size=(App.WIDTH, App.HEIGHT))
         self.map = None #Map(start_octaves=6, screen_width=App.WIDTH, screen_height=App.HEIGHT)
-        self.t_misioland = self.title_font.render("MisioLand", True, (255, 255, 255))
+        self.t_misioland = self.title_font.render("TeddyLand", True, (255, 255, 255))
 
     def run(self):
         # TODO: Maybe FSM for screen choice?
@@ -197,7 +197,7 @@ class App:
                         self.screen.fill((0, 0, 0))
                         self.screen.blit(
                             t_generating_noise,
-                            (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2)) # TODO: move this to run
+                            (App.WIDTH / 2 - len("Generating noise..."), App.HEIGHT / 2))
                         pygame.display.update()
                         return (slider1.value, slider1.value)
 
@@ -244,7 +244,6 @@ class App:
 
         hex_grid_surf = pygame.Surface((self.map.map_width, self.map.map_height))
         hex_grid_surf.set_colorkey((0,0,0)) # make black transparent
-        # Slider do zmieniania hex_radius
 
         hex_radius_slider = Slider(self.main_font, 
                                    0, 
@@ -254,7 +253,6 @@ class App:
                                    min_val=MIN_HEX_RADIUS, 
                                    max_val=MAX_HEX_RADIUS)
 
-        # TODO: We probably need confirmation using some key to regenerate hexgen
         # TODO: Regenerating noise map
 
         surface_center_point = Point.fromtuple(hex_grid_surf.get_rect().center)
@@ -320,13 +318,10 @@ class App:
                         pygame.display.update()
                         return world_surf_scaled # TODO: Blit this on new screen (view)
                     if event.key == pygame.K_r:
-                        # TODO: Regenerate
-                        self.map.hex_radius = hex_radius_slider.value # TODO: Method in map to set radius in hexgrid as well
+                        self.map.hex_radius = hex_radius_slider.value
                         self.map.hex_grid.radius = hex_radius_slider.value
                         hex_grid_surf.fill((255,255,255))
-                        # TODO: Reset data
                         self.screen.fill((0,0,0))
-
                         self.map.reset_hex_grid(self.map.hex_radius)
                         world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface, hex_radius_slider = \
                             self.set_hexgen()
@@ -379,9 +374,6 @@ class App:
                         text_surf.fill((1,1,1))
                         text_surf.blit(t_selected_type, (0,0))
                         select_hex_surface.blit(text_surf, (px,py))
-
-                # TODO: If grid resized and r pressed, blit again
-                # TODO: Blit "(R)egenerate hexgrid"
 
             slider_rect = self.screen.blit(hex_radius_slider.get_composition(), (
                 hex_radius_slider.width-50, App.HEIGHT/2))
