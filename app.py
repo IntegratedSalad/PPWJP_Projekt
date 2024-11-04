@@ -138,7 +138,7 @@ class App:
         path_to_font_file = Path(".") / "pixelify_sans.ttf"
         self.main_font = pygame.font.Font(path_to_font_file, size=18)
         self.title_font = pygame.font.Font(path_to_font_file, size=30)
-        self.little_font = pygame.font.Font(path_to_font_file, size=12)
+        self.little_font = pygame.font.Font(path_to_font_file, size=15)
         self.little_font_arial = pygame.font.SysFont("Arial", 10)
         self.screen = pygame.display.set_mode(size=(App.WIDTH, App.HEIGHT))
         self.map = None #Map(start_octaves=6, screen_width=App.WIDTH, screen_height=App.HEIGHT)
@@ -302,6 +302,7 @@ class App:
 
         t_keypress = self.main_font.render("(G)", False, (255,255,255))
         t_next = self.main_font.render("Next ->", False, (255,255,255))
+        t_regenerate_hexgrid = self.little_font.render("(R)egenerate hexgrid", False, (255,255,255))
         select_hex_surface_scaled = None
         slider_rect = None
         slider_surface = pygame.Surface((hex_radius_slider.rect.width + 50, 
@@ -380,6 +381,7 @@ class App:
                         select_hex_surface.blit(text_surf, (px,py))
 
                 # TODO: If grid resized and r pressed, blit again
+                # TODO: Blit "(R)egenerate hexgrid"
 
             slider_rect = self.screen.blit(hex_radius_slider.get_composition(), (
                 hex_radius_slider.width-50, App.HEIGHT/2))
@@ -391,6 +393,7 @@ class App:
             t_radius = self.main_font.render(f"Hex Radius: {hex_radius_slider.value}", False,
                                     (255, 255, 255))
             slider_surface.blit(t_radius, (0,0))
+            slider_surface.blit(t_regenerate_hexgrid, (0, t_radius.get_rect().height))
             self.screen.blit(slider_surface, (slider_rect.x, slider_rect.y + slider_rect.height))
 
             world_surf.blit(hex_grid_surf, (0,0))
