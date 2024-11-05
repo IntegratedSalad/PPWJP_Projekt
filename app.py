@@ -1,4 +1,5 @@
 import pygame
+import simulation
 from math import cos, pi, sin
 from pathlib import Path
 from map import Map, HexGrid, Point
@@ -413,6 +414,7 @@ class App:
     def draw_beargen_screen(self, world_surface: pygame.Surface):
         '''
         World surface returned from hexgen should be scaled
+        It can be scaled further if needed
         '''
 
         self.screen.fill((0,0,0))
@@ -479,8 +481,22 @@ class App:
                             self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
                                                     width=0) # filling
 
-    # def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
-        # pass
+    def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
+        '''
+        Ideas for how to represent bears on map:
+
+        Based on the number of bears on one tile, there are that many
+        ways to draw them:
+
+        1 -> 50: One bear of the dominant species
+        51 -> 150: Two bears of the dominant species or
+                   two of each, if there are close to being half
+        151 -> 300: Three bears
+        etc.
+
+        Like stacks of money in Tibia etc...
+        '''
+        pass
         
     def quit(self) -> None:
         pygame.font.quit()
