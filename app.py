@@ -124,8 +124,8 @@ Maybe define class "View", that can have some return field
 Screens:
 
 1. Mapgen
-2. Hexgen
-3. Beargen & biomegen
+2. Hexgen & biomegen
+3. Beargen
 '''
 class App:
     WIDTH = 1024
@@ -156,11 +156,14 @@ class App:
 
         world_surf, world_surf_scaled, hex_grid_surf, select_hex_surface, hex_radius_slider = \
             self.set_hexgen()
-        self.draw_hexgen_screen(world_surf, 
-                                world_surf_scaled, 
-                                hex_grid_surf, 
-                                select_hex_surface, 
-                                hex_radius_slider)
+        
+        world_with_hex_surface = self.draw_hexgen_screen(world_surf,
+                                                world_surf_scaled,
+                                                hex_grid_surf,
+                                                select_hex_surface,
+                                                hex_radius_slider)
+        
+        self.draw_beargen_screen(world_with_hex_surface)
 
     def draw_mapgen_screen(self) -> tuple[int, int]:
         
@@ -407,8 +410,31 @@ class App:
                              (world_surf_scaled.get_rect(center=self.screen.get_rect().center)))
             pygame.display.update()
 
-    def draw_biomegen_screen():
-        pass
+    def draw_beargen_screen(self, world_surface: pygame.Surface):
+        '''
+        World surface returned from hexgen should be scaled
+        '''
+
+        self.screen.fill((0,0,0))
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_g:
+                        pass
+                    if event.key == pygame.K_r:
+                        pass
+
+                if pygame.mouse.get_pressed()[0]:
+                    mousepos = pygame.mouse.get_pos()
+                    pass
+
+                self.screen.blit(world_surface,
+                        world_surface.get_rect(center=self.screen.get_rect().center))
+                
+            pygame.display.update()
 
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
