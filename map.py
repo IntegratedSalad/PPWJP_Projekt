@@ -4,6 +4,8 @@ from pygame.draw import polygon
 from pygame.mask import from_surface
 from enum import Enum
 from math import sqrt, cos, sin, pi
+import random
+import bear
 
 MAX_FOOD = 50
 
@@ -58,7 +60,7 @@ class Tile:
         self.fmeat_quantity = 0
         self.fapple_quantity = 0
         self.water_quantity = 0
-        self.pos_in_list = 0
+        self.movement_cost = 0
         self.bears = []
 
     def __str__(self):
@@ -406,6 +408,7 @@ class Map:
         self.noise_map = self.get_noise_map(self.map_width, self.map_height)
         # assuming width and height are the same
         self.hex_grid = HexGrid(self.hex_radius)
+        self.bear_num = 0
 
     def get_noise_map_normalized(self, X, Y):
         oldMin = (-1.0)
@@ -438,3 +441,72 @@ class Map:
         Maybe this function as an interface for this hexgrid?
         """
         pass
+
+    def generate_bears(self):
+        '''
+        Iterate over tiles and generate bears
+        TODO: Change it to generate only one bear per tile!!!!
+        '''
+
+        for r in range(self.hex_grid.size):
+            for q in range(self.hex_grid.size):
+                if self.hex_grid.tiles[q][r] is not None:
+                    tiletype = self.hex_grid.tiles[q][r].ttype
+                    if tiletype != TileType.T_VOID and tiletype != TileType.T_RIVER:
+
+                        bear_quantity = random.randint(1, 20)
+                        for _ in range(bear_quantity): # TODO: Only one bear!
+                            sex_chance = random.randint(0, 100)
+                            sex = bear.SexType.MALE
+                            if sex_chance <= bear.FEMALE_BEAR_CHANCE_ON_SPAWN:
+                                sex = bear.SexType.FEMALE
+
+                            random_chance = random.randint(0, 100)
+                            btype = bear.BearType.BROWN
+                            if random_chance < 10:
+                                btype = bear.BearType.PACIFIST
+                            elif random_chance < 30:
+                                btype = bear.BearType.VEGETARIAN
+                            elif random_chance < 35:
+                                btype = bear.BearType.SOCIAL
+                            elif random_chance < 55:
+                                btype = bear.BearType.CARNIVOROUS
+                            elif random_chance < 60:
+                                btype = bear.BearType.LONER
+
+                            bear_to_place = bear.Bear(sex, btype=btype)
+                            self.hex_grid.tiles[q][r].bears.append(bear_to_place)
+                            self.bear_num += 1
+
+    def generate_resources(self):
+        '''
+        Iterate over tiles and generate food etc.
+        '''
+
+        for r in range(self.hex_grid.size):
+            for q in range(self.hex_grid.size):
+                if self.hex_grid.tiles[q][r] is not None:
+                    tiletype = self.hex_grid.tiles[q][r].ttype
+                    apples = 0
+                    meat = 0
+                    water = 0
+
+                    if tiletype == TileType.T_DESERT:
+                        pass
+
+                    elif tiletype == TileType.T_FOREST:
+                        meat = random.randint(200, 800)
+                        apples = random.randint(100, 400)
+
+                    elif tiletype == TileType.T_FIELD:
+                        meat = random.randint(100, 300)
+                        apples = random.randint(350, 700)
+                        water = random.randint(10, 40)
+
+                    elif tiletype == TileType.T_MOUNTAINS:
+                        meat = random.randint(5, 25)
+                        apples = random.randint(10, 700)
+
+                    self.hex_grid.tiles[q][r].fapple_quantity = apples
+                    self.hex_grid.tiles[q][r].fmeat_quantity = meat
+                    self.hex_grid.tiles[q][r].water_quantity = water

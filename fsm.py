@@ -7,9 +7,10 @@ class StateType(Enum):
     STATE_EATING = 3
     STATE_FLEEING = 4
     STATE_WAITING = 5
-    STATE_STARVING = 6
-    STATE_SLEEPING = 7
-    STATE_DEAD = 8
+    STATE_HUNT = 6
+    STATE_STARVING = 7
+    STATE_SLEEPING = 8
+    STATE_DEAD = 9
 
 class State(ABCMeta):
     '''

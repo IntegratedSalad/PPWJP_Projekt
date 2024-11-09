@@ -1,10 +1,12 @@
 import pygame
 import simulation
+import bear
 from math import cos, pi, sin
 from pathlib import Path
 from map import Map, HexGrid, Point
 from map import COLOR_RIVER, COLOR_MOUNTAIN, COLOR_FIELD, COLOR_FOREST, COLOR_SELECT_GREEN
 from map import type_to_color_map
+from copy import deepcopy
 DEFAULT_HEX_RADIUS = 7
 MIN_HEX_RADIUS = 5
 MAX_HEX_RADIUS = 18
@@ -18,6 +20,27 @@ It can set color and copy these pixels onto passed surface.
 Then, we can blit (copy) everything what we've composed
 onto the screen surface (main canvas) that gets drawn.
 '''
+
+'''
+Class BearSprite
+
+TODO: Open up paint/something and draw bear
+'''
+class BearSprite(pygame.sprite.Sprite):
+
+    def __init__(self,
+                 body_color,
+                 eye_color,
+                 width,
+                 height):
+       pygame.sprite.Sprite.__init__(self)
+
+       self.image = pygame.Surface((width, height))
+
+       self.rect = self.image.get_rect()
+
+    def draw_bear(self):
+        pass
 
 '''
 Class Slider
@@ -121,6 +144,7 @@ Surface to blit everything (screen)
 Every instance that needs to be in memory for the whole time
 Maybe App draws everything? At least for now.
 Maybe define class "View", that can have some return field
+App also calls everything that sets up data
 
 Screens:
 
@@ -164,7 +188,7 @@ class App:
                                                 select_hex_surface,
                                                 hex_radius_slider)
         
-        self.draw_beargen_screen(world_with_hex_surface)
+        self.draw_resource_and_beargen_screen(world_with_hex_surface)
 
     def draw_mapgen_screen(self) -> tuple[int, int]:
         
@@ -337,7 +361,7 @@ class App:
                         hex_radius_slider.slide(abs(mousepos[0]), mousepos[1])
 
             mousepos_x, mousepos_y = pygame.mouse.get_pos()
-            if world_surf_scaled is not None:
+            if world_surf_scaled is not None: # TODO: wrap this into function? because we want to later show tile information as well
                 world_surf_scaled = pygame.transform.scale(
                     world_surf_scaled,
                     (self.map.map_width*1.5,
@@ -411,13 +435,29 @@ class App:
                              (world_surf_scaled.get_rect(center=self.screen.get_rect().center)))
             pygame.display.update()
 
-    def draw_beargen_screen(self, world_surface: pygame.Surface):
+    def draw_resource_and_beargen_screen(self, world_surface: pygame.Surface):
         '''
-        World surface returned from hexgen should be scaled
+        World surface returned from hexgen should arrive scaled
         It can be scaled further if needed
+
+        1. Generate random number of bears
+        2. Iterate over tiles and generate resources
+        3. Show resources when hex is mouseovered
+
+        1. Create bear sprites
+        2. Set them at x,y (their rects)
+           2a Get hexagon at qr -> xy (flat_hex_to_pixel)
+           2b How many bears are there? Set their layout on a hexgrid
+        3. Set width and height based on hexagon radius
         '''
 
         self.screen.fill((0,0,0))
+        self.map.generate_resources()
+        self.map.generate_bears()
+        print(f"Generated bears: {self.map.bear_num}")
+
+        bears_surface = pygame.Surface(world_surface.get_size())
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -481,7 +521,17 @@ class App:
                             self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
                                                     width=0) # filling
 
-    def draw_bear(self, bear_surface: pygame.Surface) -> pygame.Rect:
+    def draw_bears_on_tile(self, bear_tile_surface: pygame.Surface, bear_list: list, q: int, r: int) -> None:
+        '''
+        bear_tile_surface = surface created to cover the hexagon
+        How to draw them? What to modify?
+        '''
+        bear_num_in_tile = len(bear_list)
+        print(f"Bears {bear_num_in_tile}")
+
+
+
+    def draw_bears(self, bears_surface: pygame.Surface):
         '''
         Ideas for how to represent bears on map:
 
@@ -495,9 +545,19 @@ class App:
         etc.
 
         Like stacks of money in Tibia etc...
+        Size of the sprite should be dependent on the radius of the hexagon - smaller the radius,
+        smaller the bear sprite
+
+        For now - blit one bear (of type that is dominant) on each tile
+
+        Iterate over tiles and draw them on bears_surface
         '''
+
         pass
         
+
+    # def get_bear_sprite(self, bear_type: bear.BearType) -> 
+    
     def quit(self) -> None:
         pygame.font.quit()
         pygame.quit()
