@@ -48,7 +48,9 @@ class BearSprite(Sprite):
                  eye_color,
                  width, # usually radius
                  height,
-                 hex_to_pixel_func):
+                 hex_to_pixel_func,
+                 offsetq,
+                 offsetr):
        Sprite.__init__(self)
        self.q = q
        self.r = r
@@ -60,10 +62,17 @@ class BearSprite(Sprite):
        self.rect = self.image.get_rect()
     #    self.set_image(self.image)
        self.hex_to_pixel_func = hex_to_pixel_func # returns Point
+       self.offsetq = offsetq
+       self.offsetr = offsetr
        self.update_position()
 
     def update_position(self):
-        x, y = self.hex_to_pixel_func(self.width, self.q, self.r)
+        # WE HAVE TO SET OFFSET Q AND OFFSET R!!! ON TOP OF THAT, THE SURFACE IS SCALED, SO WE HAVE TO SCALE
+        # THE COORDINATES!!!!
+        x, y = self.hex_to_pixel_func(self.width, self.q-self.offsetq, self.r-self.offsetr)
+        x *= 1.5
+        y *= 1.5
+
         print(f"sprite x,y: {x},{y}")
         self.rect.topleft = (x,y)
 

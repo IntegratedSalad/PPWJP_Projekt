@@ -546,7 +546,9 @@ class Map:
                                                           None,
                                                           self.hex_grid.radius,
                                                           self.hex_grid.radius,
-                                                          self.hex_grid.qrcoordinates_to_pixel)
+                                                          self.hex_grid.qrcoordinates_to_pixel,
+                                                          self.hex_grid.offsetq,
+                                                          self.hex_grid.offsetr)
                             bear_sprite.set_image(pgmloadimg(Path(".") / "resources/Teddy2.png"))
                             _bear.sprite = bear_sprite
                             print(bear_sprite)

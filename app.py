@@ -447,17 +447,17 @@ class App:
         self.map.create_bear_sprites(bear_group)
 
         # blit the bears once
-        bear_sprite = bear.BearSprite(5,
-                                    5,
-                                    None,
-                                    None,
-                                    self.map.hex_grid.radius,
-                                    self.map.hex_grid.radius,
-                                    self.map.hex_grid.qrcoordinates_to_pixel)
-        bear_sprite.set_image(pgmloadimg(Path(".")/"resources/Teddy2.png"))
+        # bear_sprite = bear.BearSprite(5,
+        #                             5,
+        #                             None,
+        #                             None,
+        #                             self.map.hex_grid.radius,
+        #                             self.map.hex_grid.radius,
+        #                             self.map.hex_grid.qrcoordinates_to_pixel)
+        # bear_sprite.set_image(pgmloadimg(Path(".")/"resources/Teddy2.png"))
         # bears_surface.blit(bear_sprite.image.get_rect)
         # bear_group.add(bear_sprite)
-        print(f"Debug bear sprite: {bear_sprite}")
+        # print(f"Debug bear sprite: {bear_sprite}")
 
         while True:
             for event in pygame.event.get():
@@ -515,6 +515,7 @@ class App:
                     new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
                     point = HexGrid.flat_hex_to_pixel(self.map.hex_radius, new_h)
                     px, py = point.x, point.y
+                    print(f"q: {q} r: {r} x: {px} y: {py}")
                     if (px >= 0) and (py >= 0):
                         self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius, 
                                                 (255,255,255), 6) # outline
@@ -522,7 +523,7 @@ class App:
                         tiletype = self.map.get_tile_type_at_tile_q_r(q, r)
                         if tiletype is not None:
                             color = type_to_color_map[tiletype]
-                            print(f"Color: {color}")
+                            # print(f"Color: {color}")
                             self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
                                                     width=0) # filling
 
