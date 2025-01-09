@@ -2,6 +2,8 @@ from perlin_noise import PerlinNoise
 from pygame import Color, Surface, SRCALPHA
 from pygame.draw import polygon
 from pygame.mask import from_surface
+from pygame.sprite import Group
+from pygame.image import load as pgmloadimg
 from enum import Enum
 from math import sqrt, cos, sin, pi
 import random
@@ -445,7 +447,7 @@ class Map:
     def generate_bears(self):
         '''
         Iterate over tiles and generate bears
-        TODO: Change it to generate only one bear per tile!!!!
+        TODO: Change it to generate only one bear per tile!!!! Done?
         '''
 
         for r in range(self.hex_grid.size):
@@ -453,9 +455,8 @@ class Map:
                 if self.hex_grid.tiles[q][r] is not None:
                     tiletype = self.hex_grid.tiles[q][r].ttype
                     if tiletype != TileType.T_VOID and tiletype != TileType.T_RIVER:
-
-                        bear_quantity = random.randint(1, 20)
-                        for _ in range(bear_quantity): # TODO: Only one bear!
+                        bear_chance = random.randint(1, 100)
+                        if bear_chance >= bear.BEAR_CHANCE_SPAWN_ON_TILE: 
                             sex_chance = random.randint(0, 100)
                             sex = bear.SexType.MALE
                             if sex_chance <= bear.FEMALE_BEAR_CHANCE_ON_SPAWN:
@@ -477,6 +478,9 @@ class Map:
                             bear_to_place = bear.Bear(sex, btype=btype)
                             self.hex_grid.tiles[q][r].bears.append(bear_to_place)
                             self.bear_num += 1
+
+                            # TODO: Do we really need a list at every tile?
+                            # Shouldn't one "global" list containing every bear suffice?
 
     def generate_resources(self):
         '''
@@ -510,3 +514,33 @@ class Map:
                     self.hex_grid.tiles[q][r].fapple_quantity = apples
                     self.hex_grid.tiles[q][r].fmeat_quantity = meat
                     self.hex_grid.tiles[q][r].water_quantity = water
+
+    def create_bear_sprites(self, group: Group):
+        '''
+        Iterate over HexGrid tiles and create sprites.
+        Add them to group
+        '''
+        
+        for r in range(self.hex_grid.size):
+            for q in range(self.hex_grid.size):
+                if self.hex_grid.tiles[q][r] is not None:
+                    tiletype = self.hex_grid.tiles[q][r].ttype
+                    if tiletype != TileType.T_VOID and tiletype != TileType.T_RIVER:
+                        if len(self.hex_grid.tiles[q][r].bears) > 0:
+                            for _bear in self.hex_grid.tiles[q][r].bears:
+
+                                # TODO: Get bear type and add appriopriate image
+
+                                bear_sprite = bear.BearSprite(q,
+                                                              r,
+                                                              None, # TODO: later update
+                                                              None,
+                                                              self.hex_grid.radius,
+                                                              self.hex_grid.radius)
+                                bear_sprite.set_image(pgmloadimg("/resources/Teddy2.png"))
+                                _bear.sprite = bear_sprite
+                                group.add(_bear.sprite)
+
+                            # Add sprite to bear
+                            # Whenever this bear will be updated (moves/dies), update its sprite.
+                        

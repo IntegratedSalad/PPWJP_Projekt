@@ -16,8 +16,8 @@ class State(ABCMeta):
     '''
     State is a callable with a type.
     '''
-    def __init__(self, type: StateType):
-        self.name = type
+    def __init__(self, _type: StateType):
+        self.type = _type
 
     @abstractmethod
     def __call__(self, *args, **kwargs) -> dict:
