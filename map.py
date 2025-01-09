@@ -5,6 +5,7 @@ from pygame.mask import from_surface
 from pygame.sprite import Group
 from pygame.image import load as pgmloadimg
 from enum import Enum
+from pathlib import Path
 from math import sqrt, cos, sin, pi
 import random
 import bear
@@ -349,6 +350,12 @@ class HexGrid:
         return Point(x, y)
     
     @staticmethod
+    def qrcoordinates_to_pixel(radius, q, r): # return tuple
+        x = radius * ((3.0/2)   * q)
+        y = radius * ((sqrt(3)/2) * q + sqrt(3.0) * r)
+        return (x,y)
+
+    @staticmethod
     def pixel_to_flat_hex(point: Point, radius) -> Hex:
         q = ( 2.0/3 * point.x) / radius
         r = (-1.0/3 * point.x + sqrt(3)/3 * point.y) / radius
@@ -526,21 +533,22 @@ class Map:
                 if self.hex_grid.tiles[q][r] is not None:
                     tiletype = self.hex_grid.tiles[q][r].ttype
                     if tiletype != TileType.T_VOID and tiletype != TileType.T_RIVER:
+
+                        # ONLY ONE BEAR PER TILE.
+                        # TODO: MAKE IT SO THAT THEY FIGHT OR FLEE WHEN THERE IS ANOTHER BEAR.
+                        # THIS IS WHY WE WILL USE ONLY THE FIRST INDEX OF THE .bears LIST!
+
                         if len(self.hex_grid.tiles[q][r].bears) > 0:
-                            for _bear in self.hex_grid.tiles[q][r].bears:
-
-                                # TODO: Get bear type and add appriopriate image
-
-                                bear_sprite = bear.BearSprite(q,
-                                                              r,
-                                                              None, # TODO: later update
-                                                              None,
-                                                              self.hex_grid.radius,
-                                                              self.hex_grid.radius)
-                                bear_sprite.set_image(pgmloadimg("/resources/Teddy2.png"))
-                                _bear.sprite = bear_sprite
-                                group.add(_bear.sprite)
-
-                            # Add sprite to bear
-                            # Whenever this bear will be updated (moves/dies), update its sprite.
-                        
+                            _bear = self.hex_grid.tiles[q][r].bears[0]
+                            bear_sprite = bear.BearSprite(q,
+                                                          r,
+                                                          None,
+                                                          None,
+                                                          self.hex_grid.radius,
+                                                          self.hex_grid.radius,
+                                                          self.hex_grid.qrcoordinates_to_pixel)
+                            bear_sprite.set_image(pgmloadimg(Path(".") / "resources/Teddy2.png"))
+                            _bear.sprite = bear_sprite
+                            print(bear_sprite)
+                            group.add(_bear.sprite)
+                            

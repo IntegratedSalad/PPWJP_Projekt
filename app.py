@@ -7,6 +7,7 @@ from map import Map, HexGrid, Point
 from map import COLOR_RIVER, COLOR_MOUNTAIN, COLOR_FIELD, COLOR_FOREST, COLOR_SELECT_GREEN
 from map import type_to_color_map
 from copy import deepcopy
+from pygame.image import load as pgmloadimg
 DEFAULT_HEX_RADIUS = 7
 MIN_HEX_RADIUS = 5
 MAX_HEX_RADIUS = 18
@@ -436,10 +437,27 @@ class App:
         print(f"Generated bears: {self.map.bear_num}")
 
         bears_surface = pygame.Surface(world_surface.get_size())
+        bears_surface_scaled = pygame.transform.scale(bears_surface, 
+                                            (self.map.map_width*1.5, 
+                                            self.map.map_height*1.5))
+        
+        bears_surface_scaled.set_colorkey((0,0,0))
 
-        self.map.create_bear_sprites()
+        bear_group = pygame.sprite.Group()
+        self.map.create_bear_sprites(bear_group)
 
         # blit the bears once
+        bear_sprite = bear.BearSprite(5,
+                                    5,
+                                    None,
+                                    None,
+                                    self.map.hex_grid.radius,
+                                    self.map.hex_grid.radius,
+                                    self.map.hex_grid.qrcoordinates_to_pixel)
+        bear_sprite.set_image(pgmloadimg(Path(".")/"resources/Teddy2.png"))
+        # bears_surface.blit(bear_sprite.image.get_rect)
+        # bear_group.add(bear_sprite)
+        print(f"Debug bear sprite: {bear_sprite}")
 
         while True:
             for event in pygame.event.get():
@@ -455,11 +473,13 @@ class App:
                 if pygame.mouse.get_pressed()[0]:
                     mousepos = pygame.mouse.get_pos()
                     pass
-
-                self.screen.blit(world_surface,
-                        world_surface.get_rect(center=self.screen.get_rect().center))
-                
-                # blit bears
+            
+            self.screen.blit(world_surface,
+                    world_surface.get_rect(center=self.screen.get_rect().center))
+            
+            # blit bears
+            bear_group.draw(bears_surface_scaled)
+            self.screen.blit(bears_surface_scaled, bears_surface_scaled.get_rect(center=self.screen.get_rect().center))
                 
             pygame.display.update()
 

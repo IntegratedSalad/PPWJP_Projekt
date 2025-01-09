@@ -2,6 +2,7 @@ from fsm import FSM, State
 from enum import Enum
 from pygame.sprite import Sprite
 from pygame import Surface, Rect
+# from map import Point
 
 FEMALE_BEAR_CHANCE_ON_SPAWN = 20 # % there will be less females than males
 BEAR_CHANCE_SPAWN_ON_TILE = 65 # %
@@ -45,19 +46,30 @@ class BearSprite(Sprite):
                  r,
                  body_color,
                  eye_color,
-                 width,
-                 height):
+                 width, # usually radius
+                 height,
+                 hex_to_pixel_func):
        Sprite.__init__(self)
        self.q = q
        self.r = r
+       self.width = width
+       self.height = height
        self.body_color = body_color
        self.eye_color = eye_color
        self.image = Surface((width, height))
        self.rect = self.image.get_rect()
+    #    self.set_image(self.image)
+       self.hex_to_pixel_func = hex_to_pixel_func # returns Point
+       self.update_position()
+
+    def update_position(self):
+        x, y = self.hex_to_pixel_func(self.width, self.q, self.r)
+        print(f"sprite x,y: {x},{y}")
+        self.rect.topleft = (x,y)
 
     def update(self, *args, **kwargs):
         # TODO: Pass q,r to determine position
-        pass
+        self.update_position()
 
     def draw_bear_on_surface(self, surf: Surface) -> Rect:
         '''
@@ -72,6 +84,11 @@ class BearSprite(Sprite):
 
     def set_image(self, img: Surface) -> None:
         self.image = img
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def __str__(self):
+        return f"q: {self.q} r: {self.r} image: w:{self.image.get_width()} h: {self.image.get_height()}\
+                 rect w:{self.rect.w} h: {self.rect.h}"
 
 class Bear:
     '''
