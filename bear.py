@@ -61,7 +61,7 @@ class BearSprite(Sprite):
        self.image = Surface((width, height))
        self.rect = self.image.get_rect()
     #    self.set_image(self.image)
-       self.hex_to_pixel_func = hex_to_pixel_func # returns Point
+       self.hex_to_pixel_func = hex_to_pixel_func # returns tuple
        self.offsetq = offsetq
        self.offsetr = offsetr
        self.update_position()
@@ -72,6 +72,10 @@ class BearSprite(Sprite):
         x, y = self.hex_to_pixel_func(self.width, self.q-self.offsetq, self.r-self.offsetr)
         x *= 1.5
         y *= 1.5
+
+        # Manual adjustment to the sprite position - calculating this would require too much information
+        x -= 3
+        y -= 3
 
         print(f"sprite x,y: {x},{y}")
         self.rect.topleft = (x,y)

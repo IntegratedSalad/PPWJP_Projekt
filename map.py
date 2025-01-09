@@ -551,6 +551,6 @@ class Map:
                                                           self.hex_grid.offsetr)
                             bear_sprite.set_image(pgmloadimg(Path(".") / "resources/Teddy2.png"))
                             _bear.sprite = bear_sprite
-                            print(bear_sprite)
+                            # print(bear_sprite)
                             group.add(_bear.sprite)
                             

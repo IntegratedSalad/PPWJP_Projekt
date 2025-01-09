@@ -515,7 +515,8 @@ class App:
                     new_h = self.map.hex_grid.get_offset_hex(hex_to_draw)
                     point = HexGrid.flat_hex_to_pixel(self.map.hex_radius, new_h)
                     px, py = point.x, point.y
-                    print(f"q: {q} r: {r} x: {px} y: {py}")
+                    # NOTE: THESE COORDINATES ARE BEFORE 1.5 SCALING!
+                    # print(f"q: {q} r: {r} x: {px} y: {py}")
                     if (px >= 0) and (py >= 0):
                         self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius, 
                                                 (255,255,255), 6) # outline
