@@ -325,7 +325,38 @@ class HexGrid:
         new_q = hex.q + self.offsetq
         new_r = hex.r + self.offsetr
         return Hex(new_q, new_r)
+    
+    def is_tile_in_bound(self, q, r):
+        try:
+            self.tiles[q][r]
+        except IndexError:
+            return False
+        return True
+    
+    def handle_bear_movement(self, orig_q, orig_r, dq, dr):
+        """
+        Handle transition of a bear to another place in tiles
+        """
+        
+        if len(self.tiles[orig_q][orig_r].bears) <= 0:
+            print("No bear to move")
+            return False
 
+        if not self.is_tile_in_bound(orig_q+dq, orig_r+dr):
+            print("Out of bounds!")
+            return False
+
+        # See if there is another bear on the tile orig_q+dq,orig_r+dr
+        is_bear = len(self.tiles[orig_q+dq][orig_r+dr].bears) > 0
+        if is_bear:
+            print("Bear in the way!")
+            return False
+        
+        bear = self.tiles[orig_q][orig_r].bears.pop()
+        self.tiles[orig_q+dq][orig_r+dr].bears.append(bear)
+        print(f"Moving bear {random.randint(0, 10)}")
+        return True
+            
     @staticmethod
     def calculate_axial_rings_needed(height, hex_radius):
         return ((height // 2) // (hex_radius) - 2)

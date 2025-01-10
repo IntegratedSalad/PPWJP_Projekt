@@ -1,6 +1,7 @@
 import pygame
-import simulation
+from simulation import Simulation
 import bear
+from subscriber import Subscriber
 from math import cos, pi, sin
 from pathlib import Path
 from map import Map, HexGrid, Point
@@ -132,13 +133,15 @@ Screens:
 2. Hexgen & biomegen
 3. Beargen
 '''
-class App:
+class App(Subscriber):
     WIDTH = 1024
     HEIGHT = 720
 
-    def __init__(self) -> None:
+    def __init__(self, sim: Simulation) -> None:
+        super().__init__(sim)
         pygame.display.init()
         pygame.font.init()
+        self.sim = sim
 
         path_to_font_file = Path(".") / "pixelify_sans.ttf"
         self.main_font = pygame.font.Font(path_to_font_file, size=18)
@@ -148,6 +151,8 @@ class App:
         self.screen = pygame.display.set_mode(size=(App.WIDTH, App.HEIGHT))
         self.map = None #Map(start_octaves=6, screen_width=App.WIDTH, screen_height=App.HEIGHT)
         self.t_misioland = self.title_font.render("TeddyLand", True, (255, 255, 255))
+
+        self.bear_sprite_group = None
 
     def run(self):
         # TODO: Maybe FSM for screen choice?
@@ -449,19 +454,12 @@ class App:
         bear_group = pygame.sprite.Group()
         self.map.create_bear_sprites(bear_group)
 
-        # blit the bears once
-        # bear_sprite = bear.BearSprite(5,
-        #                             5,
-        #                             None,
-        #                             None,
-        #                             self.map.hex_grid.radius,
-        #                             self.map.hex_grid.radius,
-        #                             self.map.hex_grid.qrcoordinates_to_pixel)
-        # bear_sprite.set_image(pgmloadimg(Path(".")/"resources/Teddy2.png"))
-        # bears_surface.blit(bear_sprite.image.get_rect)
-        # bear_group.add(bear_sprite)
-        # print(f"Debug bear sprite: {bear_sprite}")
+        self.bear_sprite_group = bear_group
 
+        # Setup publisher/subscriber
+        self.setup_subscriptions()
+
+        self.sim.run(self.map.hex_grid)
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -480,8 +478,14 @@ class App:
             self.screen.blit(world_surface,
                     world_surface.get_rect(center=self.screen.get_rect().center))
             
+            bears_surface_scaled.fill((0,0,0))
+
+            # simulate
+            self.sim.simulate_next_turn()
+
             # blit bears
-            bear_group.draw(bears_surface_scaled)
+            self.bear_sprite_group.update()
+            self.bear_sprite_group.draw(bears_surface_scaled)
 
             # if this requires refreshing of sorts, just fill the bears_surface_scaled with black color
             self.screen.blit(bears_surface_scaled, bears_surface_scaled.get_rect(center=self.screen.get_rect().center))
@@ -533,50 +537,78 @@ class App:
                             self.draw_polygon_at_x_y(hex_map_surface, px, py, self.map.hex_radius-1, color, 6,
                                                     width=0) # filling
 
-    def draw_bears_on_tile(self, bear_tile_surface: pygame.Surface, bear_list: list, q: int, r: int) -> None:
-        '''
-        bear_tile_surface = surface created to cover the hexagon
-        How to draw them? What to modify?
-        '''
-        bear_num_in_tile = len(bear_list)
-        print(f"Bears {bear_num_in_tile}")
 
-    def draw_bears(self, bears_surface: pygame.Surface):
-        '''
-        Ideas for how to represent bears on map:
+    def setup_subscriptions(self):
+        """
+        Communicate with the publisher, what events trigger callback
+        """
+        self.register("bear_moved", self.on_bear_moved)
+        self.register("bear_died", self.on_bear_died)
+        self.register("bear_procreated", self.on_bear_procreated)
 
-        Based on the number of bears on one tile, there are that many
-        ways to draw them:
+    def on_bear_moved(self, data):
+        # print("Bear moved: ", data)
 
-        NO:
-        1 -> 50: One bear of the dominant species
-        51 -> 150: Two bears of the dominant species or
-                   two of each, if there are close to being half
-        151 -> 300: Three bears
-        etc.
-        1 bear per tile max?
-        3 bears per tile max.
+        bear_obj = data['bear']
+        orig_q = data['orig_q']
+        orig_r = data['orig_r']
+        dq = data['dq']
+        dr = data['dr']
 
-        Like stacks of money in Tibia etc...
-        Size of the sprite should be dependent on the radius of the hexagon - smaller the radius,
-        smaller the bear sprite
+        self.map.hex_grid.handle_bear_movement(orig_q, orig_r, dq, dr)
+        bear_obj.sprite.move(dq, dr)
+        # print(bear_obj.sprite in self.bear_sprite_group)
 
-        For now - blit one bear (of type that is dominant) on each tile
+    def on_bear_died(self, data):
+        pass
 
-        Iterate over tiles and draw them on bears_surface
+    def on_bear_procreated(self, data):
+        pass
 
-        Maybe later don't directly access map parameters
-        '''
+    # def draw_bears_on_tile(self, bear_tile_surface: pygame.Surface, bear_list: list, q: int, r: int) -> None:
+    #     '''
+    #     bear_tile_surface = surface created to cover the hexagon
+    #     How to draw them? What to modify?
+    #     '''
+    #     bear_num_in_tile = len(bear_list)
+    #     print(f"Bears {bear_num_in_tile}")
 
-        # TODO: Define bear sprites.
-        # Iterate over
+    # def draw_bears(self, bears_surface: pygame.Surface):
+    #     '''
+    #     Ideas for how to represent bears on map:
 
-        for r in range(self.map.hex_grid.size):
-            for q in range(self.map.hex_grid.size):
-                if self.map.hex_grid.tiles[q][r] is not None:
-                    pass
+    #     Based on the number of bears on one tile, there are that many
+    #     ways to draw them:
 
-        self.draw_bears_on_tile()
+    #     NO:
+    #     1 -> 50: One bear of the dominant species
+    #     51 -> 150: Two bears of the dominant species or
+    #                two of each, if there are close to being half
+    #     151 -> 300: Three bears
+    #     etc.
+    #     1 bear per tile max?
+    #     3 bears per tile max.
+
+    #     Like stacks of money in Tibia etc...
+    #     Size of the sprite should be dependent on the radius of the hexagon - smaller the radius,
+    #     smaller the bear sprite
+
+    #     For now - blit one bear (of type that is dominant) on each tile
+
+    #     Iterate over tiles and draw them on bears_surface
+
+    #     Maybe later don't directly access map parameters
+    #     '''
+
+    #     # TODO: Define bear sprites.
+    #     # Iterate over
+
+    #     for r in range(self.map.hex_grid.size):
+    #         for q in range(self.map.hex_grid.size):
+    #             if self.map.hex_grid.tiles[q][r] is not None:
+    #                 pass
+
+    #     self.draw_bears_on_tile()
 
     # def get_bear_sprite(self, bear_type: bear.BearType) -> 
     

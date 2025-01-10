@@ -1,4 +1,5 @@
 from app import App
+from simulation import Simulation
 
 td = '''
   ___
@@ -9,7 +10,7 @@ td = '''
 '''
 
 def main():
-    _app = App()
+    _app = App(Simulation())
     _app.run()
     print("Bye!")
     print(td)

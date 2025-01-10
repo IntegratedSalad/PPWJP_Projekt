@@ -67,6 +67,8 @@ class BearSprite(Sprite):
        self.offsetr = offsetr
        self.update_position()
 
+       # Maybe a reference to the bear?
+
     def update_position(self):
         # WE HAVE TO SET OFFSET Q AND OFFSET R!!! ON TOP OF THAT, THE SURFACE IS SCALED, SO WE HAVE TO SCALE
         # THE COORDINATES!!!!
@@ -78,8 +80,12 @@ class BearSprite(Sprite):
         x -= 3
         y -= 3
 
-        print(f"sprite x,y: {x},{y}")
+        # print(f"sprite x,y: {x},{y}")
         self.rect.topleft = (x,y)
+
+    def move(self, dq, dr): # delta q delta r: e (-1, 1)
+        self.q += dq
+        self.r += dr
 
     def update(self, *args, **kwargs):
         # TODO: Pass q,r to determine position
@@ -130,14 +136,13 @@ class Bear:
         self.age = age
         self.metabolism = metabolism
 
+        # TODO: pass hex grid reference or pass surrounding hexes 
+
         # sprite?
         self.sprite = None
 
         # Each of the Bears has to have a q,r coordinates
         # All the drawing etc. is managed by the BearSprite
-
-        # Problem jest taki - Mamy liste w map.hex_grid.tiles[q][r].bears
-        # Jak rozdzielic logike chodzenia misiów (ich interakcji) od rysowania?
 
         self.brain = FSM()
 
