@@ -2,6 +2,7 @@ from fsm import FSM, State
 from enum import Enum
 from pygame.sprite import Sprite
 from pygame import Surface, Rect
+# from pygame.transform import scale as pgscale
 # from map import Point
 
 FEMALE_BEAR_CHANCE_ON_SPAWN = 20 # % there will be less females than males
@@ -59,8 +60,8 @@ class BearSprite(Sprite):
        self.body_color = body_color
        self.eye_color = eye_color
        self.image = Surface((width, height))
-       self.rect = self.image.get_rect()
-    #    self.set_image(self.image)
+       self.rect = self.image.get_rect() # TODO: Scale this accordingly to the hexagon radius
+       self.set_image(self.image)
        self.hex_to_pixel_func = hex_to_pixel_func # returns tuple
        self.offsetq = offsetq
        self.offsetr = offsetr

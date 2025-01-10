@@ -429,6 +429,9 @@ class App:
            2a Get hexagon at qr -> xy (flat_hex_to_pixel)
            2b How many bears are there? Set their layout on a hexgrid
         3. Set width and height based on hexagon radius
+
+        Maybe set this as the main screen for game?
+        Maybe publisher/subscriber architecture
         '''
 
         self.screen.fill((0,0,0))
@@ -479,6 +482,8 @@ class App:
             
             # blit bears
             bear_group.draw(bears_surface_scaled)
+
+            # if this requires refreshing of sorts, just fill the bears_surface_scaled with black color
             self.screen.blit(bears_surface_scaled, bears_surface_scaled.get_rect(center=self.screen.get_rect().center))
                 
             pygame.display.update()
