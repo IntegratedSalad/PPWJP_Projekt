@@ -557,9 +557,9 @@ class App(Subscriber):
         dq = data['dq']
         dr = data['dr']
 
-        self.map.hex_grid.handle_bear_movement(orig_q, orig_r, dq, dr)
-        bear_obj.sprite.move(dq, dr)
-        print(bear_obj.sprite in self.bear_sprite_group)
+        if self.map.hex_grid.handle_bear_movement(orig_q, orig_r, dq, dr):
+            bear_obj.sprite.move(dq, dr)
+            print(bear_obj.sprite in self.bear_sprite_group)
 
     def on_bear_died(self, data):
         pass
