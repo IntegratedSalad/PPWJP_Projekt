@@ -77,8 +77,8 @@ class BearSprite(Sprite):
         y *= 1.5
 
         # Manual adjustment to the sprite position - calculating this would require too much information
-        x -= 3
-        y -= 3
+        x -= 12
+        y -= 12
 
         # print(f"sprite x,y: {x},{y}")
         self.rect.topleft = (x,y)

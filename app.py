@@ -489,8 +489,10 @@ class App(Subscriber):
 
             # if this requires refreshing of sorts, just fill the bears_surface_scaled with black color
             self.screen.blit(bears_surface_scaled, bears_surface_scaled.get_rect(center=self.screen.get_rect().center))
-                
+            
             pygame.display.update()
+            pygame.time.wait(200) # slow down simulation
+
 
     def draw_polygon_on_surface(self, surface: pygame.Surface, radius, color, vertex_count, width=1):
         n, r = vertex_count, radius
@@ -557,7 +559,7 @@ class App(Subscriber):
 
         self.map.hex_grid.handle_bear_movement(orig_q, orig_r, dq, dr)
         bear_obj.sprite.move(dq, dr)
-        # print(bear_obj.sprite in self.bear_sprite_group)
+        print(bear_obj.sprite in self.bear_sprite_group)
 
     def on_bear_died(self, data):
         pass

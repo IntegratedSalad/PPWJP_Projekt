@@ -333,6 +333,11 @@ class HexGrid:
             return False
         return True
     
+    def is_tile_valid(self, q, r):
+        if (self.tiles[q][r].ttype == TileType.T_VOID) or (self.tiles[q][r].ttype == TileType.T_RIVER):
+            return False
+        return True
+    
     def handle_bear_movement(self, orig_q, orig_r, dq, dr):
         """
         Handle transition of a bear to another place in tiles
@@ -344,6 +349,10 @@ class HexGrid:
 
         if not self.is_tile_in_bound(orig_q+dq, orig_r+dr):
             print("Out of bounds!")
+            return False
+        
+        if not self.is_tile_valid(orig_q+dq, orig_r+dr):
+            print("Invalid movement!")
             return False
 
         # See if there is another bear on the tile orig_q+dq,orig_r+dr

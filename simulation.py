@@ -34,6 +34,7 @@ class Simulation(Publisher):
         Returns tiles etc?
         '''
         # print("Simulating turn...")
+        
         self.simulate_bear_action()
 
     def simulate_bear_action(self):
@@ -54,6 +55,9 @@ class Simulation(Publisher):
                                 rdr = random.randint(-1, 1)
                                 # This way, App will call map, hex_grid and handle any logic with drawing the bears
                                 self.publish("bear_moved", {'bear': bear, 'orig_q': q, 'orig_r': r, 'dq': rdq, 'dr': rdr})
+                        else:
+                            print(f"No bears in tile {random.randint(0, 10)}")
+                                
 
     def simulate_plant_growth(self):
         pass
