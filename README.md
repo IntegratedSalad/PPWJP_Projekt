@@ -6,14 +6,21 @@ TeddyLand - an evolution simulation using pygame
 Project for Python Basics course in uni.
 
 # Overview
-For now, hexagonal map is generated using perlin noise data
+Hexagonal map is generated using perlin noise data
 ![image info](./hexmap.png)
 
 Each tile has a type and can be viewed.
 
+Map generates bears which are randomly placed across the map.
+They move randomly
+
+![gif](./simulation.gif)
+
 ## Rules
 
 ### Bear
+
+Each bear will have a couple of parameters, determining his behavior and survival in the simulation.
 
 ### Map
 
